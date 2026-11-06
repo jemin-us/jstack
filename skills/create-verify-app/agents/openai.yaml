@@ -1,5 +1,5 @@
 interface:
   display_name: "jstack create-verify-app"
-  short_description: "生成项目验证 skill"
+  short_description: "生成或更新项目的 verify-app 验证 skill"
 policy:
   allow_implicit_invocation: false

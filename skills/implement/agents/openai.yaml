@@ -1,5 +1,5 @@
 interface:
   display_name: "jstack implement"
-  short_description: "实现"
+  short_description: "测试先行地按 ticket 实现并提交"
 policy:
   allow_implicit_invocation: false

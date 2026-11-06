@@ -1,5 +1,5 @@
 interface:
   display_name: "jstack accept"
-  short_description: "独立验收"
+  short_description: "由非作者 agent 运行验收检查并给出结论"
 policy:
   allow_implicit_invocation: false

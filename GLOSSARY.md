@@ -20,6 +20,30 @@ _Avoid_: agent 定义、custom agent
 写在 ticket 里的一条可运行、能判定通过或失败的检查，格式为"命令或操作 → 期望结果"，由 to-tickets 生成。
 _Avoid_: 验收谓词、验收标准、DoD、checklist
 
+**结论**:
+accept 对一次验收给出的判定，只有 PASS、PASS+NOTES、FAIL 三种。
+_Avoid_: verdict、验收结果
+
+**受阻**:
+一条验收检查因为环境缺少条件（网络、浏览器、账号）而无法运行的状态，不等于通过。
+_Avoid_: 跳过、skip
+
+**测试接缝**:
+测试观察行为的公开边界，测试只写在接缝上，不测内部实现。
+_Avoid_: 测试点、seam
+
+**jstack 配置块**:
+项目 `AGENTS.md` 里的 `## jstack` 一节，记录 issue 仓库和标签，由 setup-jstack 写入。
+_Avoid_: jstack 配置文件
+
+**验收范围**:
+一次 accept 覆盖的 commit 范围，写作"起点..HEAD"，起点是实现开始前记下的 commit。
+_Avoid_: diff 范围
+
+**复现命令**:
+能在某个 bug 上稳定失败的一条命令；修复后它就是这次修复的验收检查。
+_Avoid_: repro、复现脚本
+
 **Playbook**:
 针对一类任务的固定执行步骤，由 j-mode 选中后逐步执行，每一步都写明完成标准。
 _Avoid_: 工作流模板、recipe
