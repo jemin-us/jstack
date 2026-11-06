@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack brainstorm"
+  short_description: "需求追问"
+policy:
+  allow_implicit_invocation: false

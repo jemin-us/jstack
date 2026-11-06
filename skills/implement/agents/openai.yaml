@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack implement"
+  short_description: "实现"
+policy:
+  allow_implicit_invocation: false

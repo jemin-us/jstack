@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack j-mode"
+  short_description: "jstack 入口"
+policy:
+  allow_implicit_invocation: false

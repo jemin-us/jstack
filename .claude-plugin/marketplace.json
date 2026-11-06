@@ -1,0 +1,13 @@
+{
+  "name": "jstack",
+  "owner": {
+    "name": "jemin-us"
+  },
+  "plugins": [
+    {
+      "name": "jstack",
+      "source": "./",
+      "description": "个人工程工作流：需求追问、spec、ticket、实现、独立验收。"
+    }
+  ]
+}
