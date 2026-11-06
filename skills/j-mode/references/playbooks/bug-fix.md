@@ -12,4 +12,5 @@
    完成标准：拿到 accept 结论。
 4. **处理 FAIL**：结论为 FAIL 时，带着失败详情回到 diagnosing-bugs 的修复步骤，再修一次，然后重新验收。第二次仍为 FAIL 就停止。
    完成标准：结论为 PASS 或 PASS+NOTES，或者两次 FAIL 后停止。
-5. **收尾**：按 j-mode 第 4 步汇报，并附上修复前失败、修复后通过的两段输出。
+5. **更新 issue**：bug 来自某个 issue 时，把 accept 结论评论到这个 issue 上；结论为 PASS，或 PASS+NOTES 且没有受阻项时，关闭它。没有对应 issue 时跳过。
+6. **收尾**：按 j-mode 第 4 步汇报，并附上修复前失败、修复后通过的两段输出。

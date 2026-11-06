@@ -10,23 +10,21 @@ disable-model-invocation: true
 
 ## 硬性规则
 
-- 不追问需求。只整理已经讨论过的内容；发现需求缺口时，写进"待定"。
 - "待定"不为空时不发布。先把待定项逐条交给用户决定，清空后再继续。
 - 发布前必须把 spec 全文给用户确认。用户确认前，不执行任何创建 issue 的命令。
 - 正文严格按 [references/spec-template.md](references/spec-template.md) 的章节书写，行为一节每条都用"当…时，系统应…"。
-- 术语使用项目 `GLOSSARY.md` 中的说法；有 ADR 的领域，spec 不得与 ADR 冲突。
 
 ## 流程
 
 ### 1. 读取项目配置
 
-读取项目 `AGENTS.md` 中的 `## jstack` 块，取出 GitHub 仓库和 spec 标签。
+在项目目录运行 `gh repo view --json nameWithOwner`，确认 issue 要发到哪个仓库。gh 根据 git remote 识别仓库；报错时提示用户先运行 jstack skill `setup-jstack`。
 
-完成标准：拿到仓库名和标签。没有这个块时，停止执行，提示用户先运行 jstack skill `setup-jstack`。
+完成标准：拿到 `owner/repo`。
 
 ### 2. 了解代码现状
 
-阅读与需求相关的模块、已有测试和 `docs/adr/`。
+阅读与需求相关的模块和已有测试。
 
 完成标准：能说出需求会改动哪些模块，以及这些模块现在怎么测试。
 
@@ -51,7 +49,9 @@ disable-model-invocation: true
 
 读取 [references/spec-template.md](references/spec-template.md)，按模板生成中文标题和正文。
 
-完成标准：每个章节都有内容；行为每条都能被验证；"待定"写的是"无"。"待定"不为空时，向用户逐条提问，按回答更新 spec，直到清空。
+完成标准：每个章节都有内容；行为每条都能被验证；"待定"写的是"无"。
+
+"待定"不为空时：只有一两条，直接逐条问用户，按回答更新 spec；需要大范围重新讨论时，停下来建议用户先使用 jstack skill `brainstorm`。
 
 ### 6. 用户确认
 
@@ -65,7 +65,7 @@ disable-model-invocation: true
 
 ```bash
 f=$(mktemp)  # 正文写进系统临时文件，不放进项目目录
-gh issue create --repo <仓库> --title "<中文标题>" --label "jstack:spec" --body-file "$f"
+gh issue create --repo <仓库> --title "<中文标题>" --body-file "$f"
 ```
 
 跨仓库时按第 4 步的顺序逐个发布，前端 spec 发布前把后端 spec 的链接填进正文。
@@ -81,7 +81,7 @@ gh issue create --repo <仓库> --title "<中文标题>" --label "jstack:spec" -
 用户说："需求聊清楚了，写成 spec 吧。"
 
 执行：
-1. 从 `AGENTS.md` 读到仓库 `jemin-us/shop` 和标签 `jstack:spec`；
+1. `gh repo view` 确认仓库是 `jemin-us/shop`；
 2. 阅读订单模块和已有接口测试；
 3. 提出"在订单 API 层做接口测试"，用户确认；
 4. 判断只涉及一个仓库；
@@ -93,14 +93,10 @@ gh issue create --repo <仓库> --title "<中文标题>" --label "jstack:spec" -
 
 ## 常见问题
 
-现象：`gh issue create` 报 `could not add label: 'jstack:spec' not found`。
-原因：仓库里还没有这个标签。
-处理：提示用户运行 `setup-jstack` 创建标签，不要自行去掉标签后发布。
-
 现象：`gh` 报未登录或没有权限。
 原因：当前账号未登录，或对目标仓库没有写权限。
 处理：停止发布，把报错原文告诉用户，请用户自己完成登录或切换账号。
 
 现象：生成过程中发现行为互相矛盾，或缺少关键决定。
 原因：讨论阶段没有覆盖到。
-处理：写进"待定"，按第 5 步向用户提问；需要大范围重新讨论时，建议先使用 `brainstorm`。
+处理：写进"待定"，按第 5 步处理：一两条直接问用户，大范围的回到 `brainstorm`。

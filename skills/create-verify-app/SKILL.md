@@ -59,7 +59,9 @@ mkdir -p .claude/skills
 ln -s ../../.agents/skills/verify-<app> .claude/skills/verify-<app>
 ```
 
-完成标准：`ls .claude/skills/verify-<app>/SKILL.md` 能读到文件；frontmatter 里有 `name`、`description`、`disable-model-invocation: true`。
+检查项目的 `.gitignore`，没有 `.verify-evidence/` 这一行就追加。
+
+完成标准：`ls .claude/skills/verify-<app>/SKILL.md` 能读到文件；frontmatter 里有 `name`、`description`、`disable-model-invocation: true`；`.gitignore` 包含 `.verify-evidence/`。
 
 ### 4. 建功能清单
 
@@ -88,7 +90,7 @@ ln -s ../../.agents/skills/verify-<app> .claude/skills/verify-<app>
 
 - skill 路径、symlink 路径和文件清单；
 - 第 5 步实际跑的是哪个功能，证据放在哪里；
-- 证据目录固定为 `.verify-evidence/`，生成时检查项目的 `.gitignore`，没有这一行就追加 `.verify-evidence/`；
+- 证据目录 `.verify-evidence/` 已加入 `.gitignore`；
 - 未验证的部分。
 
 ## 示例

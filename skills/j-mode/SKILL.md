@@ -12,7 +12,8 @@ disable-model-invocation: true
 - 执行其他 jstack skill 的方式是读取它的 `SKILL.md` 并照做，不通过 Harness 的 skill 调用机制。jstack 的 skill 都关闭了自动调用，调用机制会拒绝。
 - 选定 playbook 后，把它的步骤原样抄进任务列表。不做的步骤保留在列表里，标为"跳过：<原因>"。
 - 回复中的每个论断都要标明证据等级：已运行、推断、未验证。自己能跑的检查不交给用户。
-- 只在当前分支 commit，不 push，不开 PR，不关闭 issue。
+- 不在仓库默认分支上 commit，不 push，不开 PR。
+- issue 状态只由 j-mode 修改，规则和命令见 [references/issue-state.md](references/issue-state.md)。不加标签。
 - 验收结论只来自 accept，作者不能给自己出结论。
 
 ## 流程
@@ -30,9 +31,10 @@ disable-model-invocation: true
 
 ### 2. 准备分支
 
-运行 `git branch --show-current`。如果当前是仓库默认分支，先新建分支再开工：feature 用 `jstack/spec-<spec 编号>`（spec 编号在 to-spec 发布后才有，这一步放到 to-spec 之后执行），bug-fix 用 `jstack/fix-<简短描述>`。
+- feature：从当前分支新建集成分支 `jstack/spec-<spec 编号>`，各 ticket 的改动最后都合并到这里。spec 编号在 to-spec 发布后才有，所以这一步放到 to-spec 之后执行。
+- bug-fix：运行 `git branch --show-current`，当前是仓库默认分支时，新建 `jstack/fix-<简短描述>`；否则留在当前分支。
 
-完成标准：当前不在默认分支上。
+完成标准：feature 已切到集成分支；bug-fix 不在默认分支上。
 
 ### 3. 执行 playbook
 
@@ -54,7 +56,7 @@ disable-model-invocation: true
 **还有什么**
 - 受阻的验收检查，以及原因
 - subagent 做出的假设、选定的测试接缝
-- 已经 PASS、可以关闭的 issue 编号
+- 仍为 open 的 issue 及其状态（验收失败 / 待人工验收）
 - 跳过的步骤和原因
 ```
 
@@ -62,9 +64,9 @@ disable-model-invocation: true
 
 用户说："/jstack:j-mode 给订单列表加按状态筛选"
 
-执行：选择 feature；用 brainstorm 追问两轮；用 to-spec 发布 spec #12，新建分支 `jstack/spec-12`；用 to-tickets 拆出 #13、#14；派 subagent 实现 #13，再执行 accept，结论为 PASS；#14 第一次 accept 判 FAIL，带上失败输出重新派一次 implement，第二次判 PASS。
+执行：选择 feature；用 brainstorm 追问两轮；用 to-spec 发布 spec #12，新建分支 `jstack/spec-12`；用 to-tickets 拆出互不阻塞的 #13、#14；两张在各自的 worktree 里并行实现；#13 验收 PASS 后合并；#14 第一次 accept 判 FAIL，带上失败输出重新派一次 subagent，第二次判 PASS 后合并；集成分支全量测试通过。
 
-结果：三段式汇报，"还有什么"里列出可以关闭的 #13、#14。
+结果：#13、#14 评论了验收结论并关闭，#12 随之关闭；按三段式汇报。
 
 ## 常见问题
 

@@ -32,10 +32,6 @@ _Avoid_: 跳过、skip
 测试观察行为的公开边界，测试只写在接缝上，不测内部实现。
 _Avoid_: 测试点、seam
 
-**jstack 配置块**:
-项目 `AGENTS.md` 里的 `## jstack` 一节，记录 issue 仓库和标签，由 setup-jstack 写入。
-_Avoid_: jstack 配置文件
-
 **验收范围**:
 一次 accept 覆盖的 commit 范围，写作"起点..HEAD"，起点是实现开始前记下的 commit。
 _Avoid_: diff 范围
@@ -43,6 +39,14 @@ _Avoid_: diff 范围
 **复现命令**:
 能在某个 bug 上稳定失败的一条命令；修复后它就是这次修复的验收检查。
 _Avoid_: repro、复现脚本
+
+**集成分支**:
+feature playbook 为一个 spec 建的分支 `jstack/spec-<编号>`，各 ticket 分支验收通过后合并到这里。
+_Avoid_: 主分支、feature 分支
+
+**波次**:
+阻塞项都已完成、可以同时开工的一组 ticket，一波最多 3 张。
+_Avoid_: 批次、wave
 
 **Playbook**:
 针对一类任务的固定执行步骤，由 j-mode 选中后逐步执行，每一步都写明完成标准。

@@ -5,7 +5,7 @@
 ## 读取 spec
 
 ```bash
-gh issue view <编号> --json number,title,body,labels,comments
+gh issue view <编号> --json number,title,body,comments
 ```
 
 ## 发布一张 ticket
@@ -15,8 +15,7 @@ gh issue view <编号> --json number,title,body,labels,comments
 ```bash
 gh issue create \
   --title "<中文标题>" \
-  --body-file <正文文件> \
-  --label "jstack:ticket" \
+  --body-file "$f" \
   --parent <spec 编号> \
   --blocked-by <编号1>,<编号2>
 ```
@@ -29,7 +28,7 @@ gh issue create \
 发布失败后用这些命令补救：
 
 ```bash
-gh issue list --label "jstack:ticket" --state open --json number,title
+gh api repos/<owner>/<repo>/issues/<spec 编号>/sub_issues --jq '.[] | {number, title, state}'
 gh issue edit <编号> --parent <spec 编号>
 gh issue edit <编号> --add-blocked-by <编号>
 ```
@@ -37,8 +36,7 @@ gh issue edit <编号> --add-blocked-by <编号>
 ## 核对结果
 
 ```bash
-gh issue view <spec 编号> --json number,title
-gh issue list --label "jstack:ticket" --state open --json number,title
+gh api repos/<owner>/<repo>/issues/<spec 编号>/sub_issues --jq '.[] | {number, title, state}'
 ```
 
 已在 gh 2.103.3 上核实 `--parent`、`--blocked-by`、`--add-blocked-by` 这三个参数。
