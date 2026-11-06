@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack accept"
+  short_description: "独立验收"
+policy:
+  allow_implicit_invocation: false

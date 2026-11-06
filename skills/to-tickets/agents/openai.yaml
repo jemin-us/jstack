@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack to-tickets"
+  short_description: "拆 ticket"
+policy:
+  allow_implicit_invocation: false
