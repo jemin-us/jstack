@@ -1,7 +1,6 @@
 ---
 name: diagnosing-bugs
-description: 当任务涉及复现 bug、定位根因、修复报错或异常行为、排查性能退化并防止回归时使用。需求类改动使用 implement；独立判定修复是否完成使用 accept。
-disable-model-invocation: true
+description: 当用户只要求复现 bug、定位根因、排查报错、异常行为或性能退化时使用。要按 jstack 工作流完整修复 bug 时使用 j-mode；独立判定修复是否完成使用 accept。
 ---
 
 # 定位并修复 bug

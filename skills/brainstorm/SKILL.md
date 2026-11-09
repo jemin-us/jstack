@@ -1,7 +1,6 @@
 ---
 name: brainstorm
-description: 当任务涉及需求澄清、方案讨论、追问设计、把模糊想法问清楚时使用。需求已经清楚、要写成 spec 时使用 to-spec。
-disable-model-invocation: true
+description: 当用户要求追问需求、澄清模糊想法、讨论方案或设计时使用，例如“先帮我把需求问清楚”。需求已经清楚、要写成 spec 时使用 to-spec；要按工作流完整推进新功能时使用 j-mode。
 ---
 
 # 需求追问

@@ -2,4 +2,4 @@ interface:
   display_name: "jstack brainstorm"
   short_description: "按轮次追问需求，每题给推荐答案"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

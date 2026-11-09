@@ -1,7 +1,6 @@
 ---
 name: setup-jstack
 description: 当任务涉及在项目中启用 jstack、检查 git 与 gh 环境、确认 GitHub 账号和默认仓库时使用。为项目生成验证 skill 使用 create-verify-app。
-disable-model-invocation: true
 ---
 
 # 配置项目
