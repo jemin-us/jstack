@@ -58,7 +58,7 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 ### 5. 写 ticket 正文
 
-按 [references/ticket-template.md](references/ticket-template.md) 为每张 ticket 写正文。写完逐张自查：
+按 [references/ticket-template.md](references/ticket-template.md) 为每张 ticket 写正文，写法按 [writing-for-agents](../writing-for-agents/SKILL.md)。写完逐张自查：
 
 - 只读这张 ticket，不看对话和其他 ticket，能否开工？
 - 验收检查能直接运行吗？是否优先写了“改动前失败、改动后通过”的检查？

@@ -104,7 +104,7 @@ description 决定 skill 是否被加载，按以下句式书写：
 
 1. 运行校验脚本。
 2. 按 [references/checklist.md](references/checklist.md) 逐项检查。
-3. 逐句对照 [references/writing.md](references/writing.md)，列出违反的条目和所在行。
+3. 读取 [writing-for-agents](../writing-for-agents/SKILL.md) 并按它的审查任务逐条检查，列出违反的条目和所在行。
 4. 定位问题：
    - 不触发或误触发：改 description。
    - 触发后不按指令执行：改正文，常见原因是过长、关键约束靠后、措辞含糊。
