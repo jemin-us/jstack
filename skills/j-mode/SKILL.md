@@ -32,9 +32,9 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 ### 2. 准备分支
 
 - feature：从当前分支新建集成分支 `jstack/spec-<spec 编号>`，各 ticket 的改动最后都合并到这里。spec 编号在 to-spec 发布后才有，所以这一步放到 to-spec 之后执行。
-- bug-fix：运行 `git branch --show-current`，当前是仓库默认分支时，新建 `jstack/fix-<简短描述>`；否则留在当前分支。
+- bug-fix：不切换主目录的分支。修复所用的 worktree 和新分支由 bug-fix playbook 第 1 步建。
 
-完成标准：feature 已切到集成分支；bug-fix 不在默认分支上。
+完成标准：feature 已切到集成分支；bug-fix 主目录的分支保持不变。
 
 ### 3. 执行 playbook
 

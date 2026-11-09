@@ -11,3 +11,4 @@ jstack 正文用通用说法，在 Claude Code 中按下表执行。
 | 操作浏览器 | 内置浏览器工具；用户要求用自己的 Chrome 时用 Claude in Chrome |
 | 任务列表 | 当前环境提供的任务列表工具 |
 | 项目指令文件 | `CLAUDE.md`；若项目只有 `AGENTS.md`，Claude Code 会读取它 |
+| worktree 目录 | `.claude/worktrees`，规则见 [worktree.md](../../../implement/references/worktree.md) |

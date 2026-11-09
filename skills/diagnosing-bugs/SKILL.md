@@ -12,6 +12,7 @@ description: 当用户只要求复现 bug、定位根因、排查报错、异常
 - 复现命令就是这次修复的验收检查：修复前失败，修复后通过。回复里原样贴出这两段输出。
 - 每一行发布的改动都要有运行时证据支撑。"也许有用"的防御代码不发布；证据推翻了某个猜想，就撤回它带来的改动。
 - 展示命令、输出和抓取内容前，先把密钥、令牌、Cookie 替换成 `<REDACTED>`。
+- 改任何文件之前（包括临时日志、测试程序和修复），按 [worktree.md](../implement/references/worktree.md) 的"开始"一节新建 worktree 和新分支，之后只在 worktree 里改文件、运行复现和 commit，不改动用户主目录的分支和文件。调用方给了已有 worktree 时，直接在其中工作。记下 worktree 绝对路径、新分支名和起点 commit。
 
 ## 流程
 
@@ -67,9 +68,9 @@ description: 当用户只要求复现 bug、定位根因、排查报错、异常
 
 - 搜索调试前缀，删除所有临时日志；删除临时测试程序。
 - 把正确的那个猜想写进修复的 commit 信息。
-- 把"必须保持不变的行为"和验收检查交给 accept 做独立验收。在 j-mode 中，由 bug-fix playbook 负责衔接；单独使用本 skill 时，提示用户手动调用 accept。
+- 把"必须保持不变的行为"和验收检查交给 accept 做独立验收。在 j-mode 中，由 bug-fix playbook 负责衔接和清理。单独使用本 skill 时，commit 后直接读取 [accept](../accept/SKILL.md) 并照做，不提示用户手动调用；验收范围是"起点..新分支 HEAD"，在 worktree 里执行。结论为 PASS 或 PASS+NOTES 时，按 [worktree.md](../implement/references/worktree.md) 的"清理"一节删除 worktree、保留分支，并告诉用户分支名；结论为 FAIL 时保留两者，并列出路径。
 
-完成标准：搜索调试前缀没有结果，并按报告模板完成收尾。
+完成标准：搜索调试前缀没有结果；单独使用时已拿到 accept 结论，worktree 已按结论删除或保留；按报告模板完成收尾。
 
 ## 示例
 
@@ -80,9 +81,9 @@ description: 当用户只要求复现 bug、定位根因、排查报错、异常
 2. 缩小到"最后一批不足缓冲区大小"这一个条件。
 3. 列出 3 个猜想，埋点后确认根因是关闭流前没有刷新缓冲区。
 4. 写出诊断结论，先 commit 失败的测试，再修复并 commit。
-5. 贴出 50 次中失败 20 次、修复后 50 次全部通过的两段输出，交给 accept。
+5. 贴出 50 次中失败 20 次、修复后 50 次全部通过的两段输出，直接执行 accept 得到 PASS，删除 worktree。
 
-结果：诊断结论加两个 commit。验收检查为"`npm test -- export.spec.ts` → 50 次全部通过"。
+结果：诊断结论加两个 commit，落在保留下来的新分支上，并告诉用户分支名。验收检查为"`npm test -- export.spec.ts` → 50 次全部通过"。
 
 ## 常见问题
 
