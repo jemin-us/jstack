@@ -1,0 +1,15 @@
+name: CI
+
+on: pull_request
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 校验插件结构
+        run: python3 scripts/validate.py
+      - name: 检查版本号递增
+        run: python3 scripts/check_version.py "origin/${{ github.base_ref }}" HEAD
