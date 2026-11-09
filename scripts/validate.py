@@ -48,11 +48,15 @@ def check_skill(d):
     extra = set(fm) - ALLOWED_KEYS
     if extra:
         errs.append(f"{d.name}: frontmatter 含不允许的字段 {sorted(extra)}")
-    if fm.get("disable-model-invocation") != "true":
-        errs.append(f"{d.name}: 必须设置 disable-model-invocation: true")
+    # 两端的自动调用设置必须一致：Claude Code 看 disable-model-invocation，Codex 看 allow_implicit_invocation
+    manual = fm.get("disable-model-invocation") == "true"
+    want = "false" if manual else "true"
     yaml = d / "agents" / "openai.yaml"
-    if not yaml.is_file() or not re.search(r"allow_implicit_invocation:\s*false", yaml.read_text(encoding="utf-8")):
-        errs.append(f"{d.name}: agents/openai.yaml 须设置 allow_implicit_invocation: false")
+    m = re.search(r"allow_implicit_invocation:\s*(\S+)", yaml.read_text(encoding="utf-8")) if yaml.is_file() else None
+    if not m or m.group(1) != want:
+        got = m.group(1) if m else "未设置"
+        errs.append(f"{d.name}: 两处设置不一致，SKILL.md {'有' if manual else '没有'} disable-model-invocation: true，"
+                    f"agents/openai.yaml 的 allow_implicit_invocation 须为 {want}（当前为 {got}）")
     for md in d.rglob("*.md"):
         # 代码块里的链接是模板示例，不是真实链接
         text = re.sub(r"^```.*?^```", "", md.read_text(encoding="utf-8"), flags=re.S | re.M)

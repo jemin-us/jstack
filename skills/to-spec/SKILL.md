@@ -1,7 +1,6 @@
 ---
 name: to-spec
-description: 当任务涉及把已讨论清楚的需求写成 spec、整理需求文档、发布 spec issue 时使用。需求还不清楚时使用 brainstorm；要拆成可执行任务时使用 to-tickets。
-disable-model-invocation: true
+description: 当用户要求把已讨论清楚的需求或讨论结果写成 spec、发布 spec issue 时使用，例如“把讨论结果写成 spec”。需求还不清楚时使用 brainstorm；泛化的新功能请求使用 j-mode；拆 ticket 使用 to-tickets。
 ---
 
 # 生成 spec

@@ -1,7 +1,6 @@
 ---
 name: j-mode
-description: 当任务需要按 jstack 工作流完整推进时使用，包括开发新功能（feature）和修复 bug（bug-fix）。选中 playbook 后按步骤执行其他 jstack skill。只想用其中一步时，直接调用对应的 skill。
-disable-model-invocation: true
+description: 当用户提出泛化的开发请求时使用，例如“加个功能”“给订单列表加按状态筛选”“改一下这个行为”“修这个 bug”。按 jstack 工作流选 feature 或 bug-fix playbook，依次执行其他 jstack skill 完整推进。请求已指明 ticket 编号、spec 编号或待验收的分支时，使用对应的 implement、to-tickets、accept。
 ---
 
 # jstack 入口
@@ -10,7 +9,7 @@ disable-model-invocation: true
 
 - `<jstack 插件目录>` 是本文件所在目录往上两级（本文件位于 `<jstack 插件目录>/skills/j-mode/SKILL.md`）。开始时确定一次它的绝对路径，之后读取其他 skill、填写 brief 都用这个绝对路径。
 - 先读取当前 Harness 的 adapter，整个会话只读一次：[Claude Code](references/harness/claude-code.md)、[Codex](references/harness/codex.md)。下文的"读取 skill""派 subagent""向用户提问"都按 adapter 执行。
-- 执行其他 jstack skill 的方式是读取它的 `SKILL.md` 并照做，不通过 Harness 的 skill 调用机制。jstack 的 skill 都关闭了自动调用，调用机制会拒绝。
+- 执行其他 jstack skill 的方式是读取它的 `SKILL.md` 并照做。
 - 选定 playbook 后，把它的步骤原样抄进任务列表。不做的步骤保留在列表里，标为"跳过：<原因>"。
 - 回复中的每个论断都要标明证据等级：已运行、推断、未验证。自己能跑的检查不交给用户。
 - 不在仓库默认分支上 commit，不 push，不开 PR。
@@ -28,14 +27,14 @@ disable-model-invocation: true
 | feature | 新功能、行为变更，需要 spec 和 ticket | [feature.md](references/playbooks/feature.md) |
 | bug-fix | 现有行为出错、报错、性能退化 | [bug-fix.md](references/playbooks/bug-fix.md) |
 
-完成标准：向用户说明选了哪个 playbook，并给出一句理由。两个都不适用时，告诉用户直接调用哪个 jstack skill，然后结束。
+完成标准：向用户说明选了哪个 playbook，并给出一句理由。两个都不适用时，说明改用哪个 jstack skill，然后直接读取它的 `SKILL.md` 并照做，不再执行下面的步骤。
 
 ### 2. 准备分支
 
 - feature：从当前分支新建集成分支 `jstack/spec-<spec 编号>`，各 ticket 的改动最后都合并到这里。spec 编号在 to-spec 发布后才有，所以这一步放到 to-spec 之后执行。
-- bug-fix：运行 `git branch --show-current`，当前是仓库默认分支时，新建 `jstack/fix-<简短描述>`；否则留在当前分支。
+- bug-fix：不切换主目录的分支。修复所用的 worktree 和新分支由 bug-fix playbook 第 1 步建。
 
-完成标准：feature 已切到集成分支；bug-fix 不在默认分支上。
+完成标准：feature 已切到集成分支；bug-fix 主目录的分支保持不变。
 
 ### 3. 执行 playbook
 
@@ -70,10 +69,6 @@ disable-model-invocation: true
 结果：#13、#14 评论了验收结论并关闭，#12 随之关闭；按三段式汇报。
 
 ## 常见问题
-
-现象：子 skill 的调用被 Harness 拒绝。
-原因：jstack 的 skill 设置了只能手动调用。
-处理：改为按 adapter 读取 `../<name>/SKILL.md` 并照做。
 
 现象：同一张 ticket 第二次 accept 仍为 FAIL。
 原因：ticket 切分有问题，或者验收检查本身写错了。
