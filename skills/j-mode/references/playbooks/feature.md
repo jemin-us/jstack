@@ -16,7 +16,7 @@
       `git worktree add <仓库父目录>/.worktrees/<仓库名>-t<编号> -b jstack/spec-<spec 编号>-t<编号>`。
       记下集成分支当前的 commit，作为这张 ticket 验收范围的起点；把 ticket 指派给当前账号。
    3. **并行实现**：按 [implement-brief.md](../implement-brief.md) 为每张 ticket 填好 brief，工作目录填它的 worktree，然后同时派出 subagent。
-   4. **逐张验收**：每个 subagent 返回后，在它的 worktree 里读取 [accept](../../../accept/SKILL.md) 并照做，验收范围是"起点..ticket 分支 HEAD"。subagent 汇报验收检查没通过、没有 commit 的，跳过验收，直接按第 6 小步重试。
+   4. **逐张验收**：每个 subagent 返回后，在它的 worktree 里（每条命令都以 `cd <worktree 绝对路径> &&` 开头）读取 [accept](../../../accept/SKILL.md) 并照做，验收范围是"起点..ticket 分支 HEAD"。subagent 汇报验收检查没通过、没有 commit 的，跳过验收，直接按第 6 小步重试。
    5. **合并**：PASS 或 PASS+NOTES 的 ticket，在集成分支上运行 `git merge --no-ff <ticket 分支>`。有冲突时先 `git merge --abort`，再按第 6 小步重试，brief 末尾附上冲突的文件。合并成功后，按 [issue-state.md](../issue-state.md) 评论结论并关闭 ticket（PASS+NOTES 有受阻项时保持 open），然后删除 worktree 和 ticket 分支。
    6. **重试**：验收 FAIL 或合并冲突时，在原 worktree 里重新派一次 subagent，brief 末尾附上失败详情，然后重新验收、合并。第二次仍失败，就把结论评论到 ticket 上，保持 open，并保留 worktree 供用户排查。依赖这张 ticket 的 ticket 不再开工，其余照常进行。
    7. **波次收尾**：本波全部处理完后，在集成分支上运行一次全量测试。失败时停止整个 playbook，进入收尾。
