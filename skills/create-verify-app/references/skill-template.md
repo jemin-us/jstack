@@ -1,0 +1,78 @@
+# verify-app 生成模板
+
+生成 `.agents/skills/verify-<app>/` 下的文件时读这份模板。尖括号里的内容要全部换成仓库里的真实内容，一个都不能留。
+
+## SKILL.md
+
+````markdown
+---
+name: verify-<app>
+description: 当任务涉及启动 <app>、像用户一样操作 <使用面>、为改动收集运行证据时使用。验收一张 ticket 使用 jstack 的 accept。
+disable-model-invocation: true
+---
+
+# 验证 <app>
+
+<一句话说明 app 是什么，用户主要通过哪个使用面接触它。>
+
+## 硬性规则
+
+- 只操作本次运行启动的实例。<不能并行运行时写：同一时间只能有一个实例。>
+- 走真实的用户路径，不调用内部接口或测试专用接口。
+- 前提条件不满足时，记为失败并写明原因，不要放宽步骤。
+- Cleanup 不删除证据。
+
+## Launch
+
+```bash
+<从空数据目录启动所需的完整命令，包括迁移和预置数据>
+```
+
+可用的信号：<比如出现某行日志、某个页面能打开、某条命令返回某个结果。要求是用户能开始操作，不能只是进程有响应。>
+
+## Doctor
+
+```bash
+<一条只读的检查命令>
+```
+
+通过的标准：进程在运行，版本或构建号符合预期，端口是本次启动的实例占用的，登录状态有效。遇到任何异常，先运行 Doctor。
+
+## Drive
+
+操作工具：<比如 Playwright、浏览器控制工具、tmux、curl>。
+
+<给出常用操作的真实命令。定位元素优先用稳定的标识，比如无障碍名称、data 属性、提示字符串、路由路径；不要用坐标或 Tab 键顺序。>
+
+各功能的具体操作步骤见 `features/README.md`。
+
+## Evidence
+
+证据目录：`.verify-evidence/<功能>/`（已加入 `.gitignore`）
+
+每次证明都要保存：
+- 用户的操作，以及操作之后的状态，不能只有最后一屏；
+- 副作用，比如写入的文件、插入的数据行、发出的消息；
+- CLI 场景还要保存命令、stdout、stderr 和退出码。
+
+试运行模式或测试模式实际跳过了什么，要亲自观察确认，不能只看它的名字。
+
+## Cleanup
+
+```bash
+<只结束本次启动的进程，按记录下来的 PID 或会话名来结束，不按进程名>
+<删除临时数据目录和"验证用临时文件">
+```
+
+Cleanup 之后，证据目录仍然要在。
+````
+
+## agents/openai.yaml
+
+```yaml
+interface:
+  display_name: "verify-<app>"
+  short_description: "启动并像用户一样操作 <app>"
+policy:
+  allow_implicit_invocation: false
+```

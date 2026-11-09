@@ -54,7 +54,9 @@ def check_skill(d):
     if not yaml.is_file() or not re.search(r"allow_implicit_invocation:\s*false", yaml.read_text(encoding="utf-8")):
         errs.append(f"{d.name}: agents/openai.yaml 须设置 allow_implicit_invocation: false")
     for md in d.rglob("*.md"):
-        for target in LINK_RE.findall(md.read_text(encoding="utf-8")):
+        # 代码块里的链接是模板示例，不是真实链接
+        text = re.sub(r"^```.*?^```", "", md.read_text(encoding="utf-8"), flags=re.S | re.M)
+        for target in LINK_RE.findall(text):
             if "://" in target or target.startswith("mailto:"):
                 continue
             if not (md.parent / target).exists():

@@ -1,5 +1,5 @@
 interface:
   display_name: "jstack to-spec"
-  short_description: "生成 spec"
+  short_description: "把讨论清楚的需求写成 spec 并发布为 issue"
 policy:
   allow_implicit_invocation: false

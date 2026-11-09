@@ -27,7 +27,7 @@ Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
 | `diagnosing-bugs` | 复现并定位 bug |
 | `accept` | 非作者 agent 独立验收 |
 | `create-verify-app` | 为项目生成 verify-app 类 skill |
-| `setup-jstack` | 检查环境并配置项目 |
+| `setup-jstack` | 检查 gh 环境、账号和默认仓库 |
 
 ## 开发
 
