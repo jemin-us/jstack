@@ -4,8 +4,8 @@
 
 ## 发布前
 
-- PR 只要改了 `skills/` 或 `.claude-plugin/`，就在同一个 PR 里递增 `.claude-plugin/plugin.json` 的 `version`。两端的缓存目录按版本号命名，版本号不变时，更新命令可能拉不到新内容。
-- 运行 `python3 scripts/validate.py` 和 `claude plugin validate .`，两条都通过后再合并。
+- PR 上的 CI 会检查插件结构和版本号，失败时先修好再合并。
+- CI 不跑 `claude plugin validate .`（需要 Claude CLI），合并前在本地运行一次，通过后再合并。
 
 ## 发布后
 
