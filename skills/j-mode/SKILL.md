@@ -8,6 +8,7 @@ disable-model-invocation: true
 
 ## 硬性规则
 
+- `<jstack 插件目录>` 是本文件所在目录往上两级（本文件位于 `<jstack 插件目录>/skills/j-mode/SKILL.md`）。开始时确定一次它的绝对路径，之后读取其他 skill、填写 brief 都用这个绝对路径。
 - 先读取当前 Harness 的 adapter，整个会话只读一次：[Claude Code](references/harness/claude-code.md)、[Codex](references/harness/codex.md)。下文的"读取 skill""派 subagent""向用户提问"都按 adapter 执行。
 - 执行其他 jstack skill 的方式是读取它的 `SKILL.md` 并照做，不通过 Harness 的 skill 调用机制。jstack 的 skill 都关闭了自动调用，调用机制会拒绝。
 - 选定 playbook 后，把它的步骤原样抄进任务列表。不做的步骤保留在列表里，标为"跳过：<原因>"。
