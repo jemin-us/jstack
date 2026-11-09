@@ -15,7 +15,7 @@ Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
 
 ## Skills
 
-所有 skill 只能手动调用。入口是 `j-mode`。
+所有 skill 都会按请求自动加载，也可以用 `/jstack:<名称>` 手动调用。泛化的新功能和 bug 请求由入口 `j-mode` 承接；指明 ticket 编号、spec 编号或待验收分支的请求直接加载对应的 skill。
 
 | skill | 职责 |
 |---|---|
