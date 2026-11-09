@@ -12,7 +12,8 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 - 执行其他 jstack skill 的方式是读取它的 `SKILL.md` 并照做。
 - 选定 playbook 后，把它的步骤原样抄进任务列表。不做的步骤保留在列表里，标为"跳过：<原因>"。
 - 回复中的每个论断都要标明证据等级：已运行、推断、未验证。自己能跑的检查不交给用户。
-- 不在仓库默认分支上 commit，不 push，不开 PR。
+- 只在非默认分支上 commit。push 和开 PR 在第 4 步先问用户，用户同意后才执行。
+- 写入 GitHub（push、开 PR、创建或修改 issue）前，运行 `gh api repos/<owner/repo> --jq .permissions.push` 确认当前 gh 账号有写权限，`<owner/repo>` 用 `gh repo view --json nameWithOwner --jq .nameWithOwner` 查。结果是 `true` 时继续；否则按 [setup-jstack](../setup-jstack/SKILL.md) 第 3 步找出已登录且有写权限的账号，运行 `gh auth switch -u <账号>`，并告诉用户切到了哪个账号；找不到这样的账号时停下，请用户自己运行 `gh auth login`。
 - issue 状态只由 j-mode 修改，规则和命令见 [references/issue-state.md](references/issue-state.md)。不加标签。
 - 验收结论只来自 accept，作者不能给自己出结论。
 
@@ -64,13 +65,22 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 - 跳过的步骤和原因
 ```
 
+汇报后问用户一次："要 push `<分支>` 并开 PR 吗？"`<分支>` 在 feature 下是集成分支 `jstack/spec-<spec 编号>`，在 bug-fix 下是修复分支。以下命令都以 `cd <主目录> &&` 开头。
+
+- 用户同意：按硬性规则检查账号，然后运行 `git push -u origin <分支>`，再运行 `gh pr create --base <默认分支> --head <分支> --title "<标题>" --body-file "$f"`，正文是上面的三段汇报，先写进 `f=$(mktemp)`。`<默认分支>` 用 `gh repo view --json defaultBranchRef --jq .defaultBranchRef.name` 查。把 PR 链接告诉用户，PR 由用户自己合并。
+- 用户不同意：保留本地分支，告诉用户分支名。
+
+之后，feature 按 [worktree.md](../implement/references/worktree.md) "清理"一节中"feature playbook 的集成 worktree"一行删除集成 worktree、保留集成分支。
+
+完成标准：用户已回答是否 push；同意时 PR 已创建，链接已告诉用户；feature 的集成 worktree 已删除。
+
 ## 示例
 
 用户说："/jstack:j-mode 给订单列表加按状态筛选"
 
 执行：选择 feature；用 brainstorm 追问两轮；用 to-spec 发布 spec #12，在集成 worktree 里新建分支 `jstack/spec-12`；用 to-tickets 拆出互不阻塞的 #13、#14；两张在各自的 worktree 里并行实现；#13 验收 PASS 后合并；#14 第一次 accept 判 FAIL，带上失败输出重新派一次 subagent，第二次判 PASS 后合并；集成分支全量测试通过。
 
-结果：#13、#14 评论了验收结论并关闭，#12 随之关闭；按三段式汇报。
+结果：#13、#14 评论了验收结论并关闭，#12 随之关闭；按三段式汇报；用户同意 push 后，开出 `jstack/spec-12` 到默认分支的 PR，删除集成 worktree。
 
 ## 常见问题
 
