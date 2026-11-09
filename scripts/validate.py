@@ -45,6 +45,8 @@ def check_skill(d):
         errs.append(f"{d.name}: description 不能含 < 或 >")
     if re.search(r":\s", desc):
         errs.append(f"{d.name}: description 含 ': '，YAML 会解析出错")
+    if desc[:1] not in "\"'" and re.search(r"\s#", desc):
+        errs.append(f"{d.name}: description 含空格加 #，YAML 会从这里截断，给整条 description 加双引号")
     extra = set(fm) - ALLOWED_KEYS
     if extra:
         errs.append(f"{d.name}: frontmatter 含不允许的字段 {sorted(extra)}")

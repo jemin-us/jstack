@@ -14,7 +14,7 @@ description: 当任务涉及 <关键词> 时使用。
 | 字段 | 必填 | 规则 |
 |---|---|---|
 | `name` | 是 | kebab-case，与文件夹名一致，不含 `claude`、`anthropic` |
-| `description` | 是 | 不超过 1024 字符，不含 `<`、`>`；写清触发场景和边界 |
+| `description` | 是 | 不超过 1024 字符，不含 `<`、`>`；写清触发场景和边界；含空格加 `#`（如 `实现 #42`）时整条加双引号，否则 YAML 从 `#` 起截断 |
 | `license` | 否 | 开源时填写，例如 `MIT`、`Apache-2.0` |
 | `compatibility` | 否 | 1–500 字符，说明运行环境要求，例如依赖、网络、适用产品 |
 | `allowed-tools` | 否 | 限制可用工具，例如 `"Bash(python:*) WebFetch"` |

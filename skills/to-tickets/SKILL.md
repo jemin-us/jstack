@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: 当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 to-spec；泛化的新功能请求使用 j-mode。
+description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 to-spec；泛化的新功能请求使用 j-mode。"
 ---
 
 # 拆 ticket
