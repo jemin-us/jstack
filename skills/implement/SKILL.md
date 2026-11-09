@@ -14,7 +14,7 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 - 不修改已有测试来让检查通过。确实需要修改时，在 commit 信息里写明改了哪个测试、为什么。
 - 不放宽断言、不跳过测试、不扩大超时。
 - 有 ticket 时，ticket 里的每一条验收检查都要实际运行并通过。跑不通就停下汇报，不改写验收检查。
-- 改代码前按 [references/worktree.md](references/worktree.md) 新建 worktree 和新分支，之后只在 worktree 里改文件和 commit（见 ADR 0003）。不切换、不改动用户主目录的分支和文件。push 和开 PR 交给 [open-pr](../open-pr/SKILL.md)。
+- 改代码前按 [references/worktree.md](references/worktree.md) 新建 worktree 和新分支，之后只在 worktree 里改文件和 commit（见 ADR 0003）。不切换、不改动用户主目录的分支和文件。push 和开 PR 交给 [pr](../pr/SKILL.md)。
 
 ## 流程
 
@@ -106,7 +106,7 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 - 没有 ticket 时写：没有 ticket 验收检查，并写明 accept 用的检查来自哪里
 ```
 
-单独使用且 accept 结论为 PASS 或 PASS+NOTES 时，汇报后读取 [open-pr](../open-pr/SKILL.md) 并照做，分支是第 2 步建的新分支，正文用上面的三段汇报。由 j-mode 派发时跳过，由 j-mode 收尾。
+单独使用且 accept 结论为 PASS 或 PASS+NOTES 时，汇报后读取 [pr](../pr/SKILL.md) 并照做，分支是第 2 步建的新分支，正文用上面的三段汇报。由 j-mode 派发时跳过，由 j-mode 收尾。
 
 ## 示例
 

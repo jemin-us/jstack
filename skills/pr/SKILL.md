@@ -1,5 +1,5 @@
 ---
-name: open-pr
+name: pr
 description: 当用户要求 push 分支并开 PR、发 PR、提 pull request 时使用；j-mode、implement、diagnosing-bugs 收尾时也读取它。只 push 已 commit 的分支并创建 PR，不 commit、不合并。写代码使用 implement；验收使用 accept。
 ---
 

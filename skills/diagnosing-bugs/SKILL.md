@@ -68,7 +68,7 @@ description: 当用户只要求复现 bug、定位根因、排查报错、异常
 
 - 搜索调试前缀，删除所有临时日志；删除临时测试程序。
 - 把正确的那个猜想写进修复的 commit 信息。
-- 把"必须保持不变的行为"和验收检查交给 accept 做独立验收。在 j-mode 中，由 bug-fix playbook 负责衔接和清理。单独使用本 skill 时，commit 后直接读取 [accept](../accept/SKILL.md) 并照做，不提示用户手动调用；验收范围是"起点..新分支 HEAD"，在 worktree 里执行。结论为 PASS 或 PASS+NOTES 时，按 [worktree.md](../implement/references/worktree.md) 的"清理"一节删除 worktree、保留分支，并告诉用户分支名；结论为 FAIL 时保留两者，并列出路径。单独使用且结论为 PASS 或 PASS+NOTES 时，按报告模板收尾后读取 [open-pr](../open-pr/SKILL.md) 并照做，分支是修复分支。
+- 把"必须保持不变的行为"和验收检查交给 accept 做独立验收。在 j-mode 中，由 bug-fix playbook 负责衔接和清理。单独使用本 skill 时，commit 后直接读取 [accept](../accept/SKILL.md) 并照做，不提示用户手动调用；验收范围是"起点..新分支 HEAD"，在 worktree 里执行。结论为 PASS 或 PASS+NOTES 时，按 [worktree.md](../implement/references/worktree.md) 的"清理"一节删除 worktree、保留分支，并告诉用户分支名；结论为 FAIL 时保留两者，并列出路径。单独使用且结论为 PASS 或 PASS+NOTES 时，按报告模板收尾后读取 [pr](../pr/SKILL.md) 并照做，分支是修复分支。
 
 完成标准：搜索调试前缀没有结果；单独使用时已拿到 accept 结论，worktree 已按结论删除或保留；按报告模板完成收尾。
 

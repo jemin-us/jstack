@@ -65,7 +65,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 - 跳过的步骤和原因
 ```
 
-汇报后读取 [open-pr](../open-pr/SKILL.md) 并照做，分支在 feature 下是集成分支，在 bug-fix 下是修复分支，正文用上面的三段汇报。之后，feature 按 [worktree.md](../implement/references/worktree.md) "清理"一节中"feature playbook 的集成 worktree"一行删除集成 worktree、保留集成分支。
+汇报后读取 [pr](../pr/SKILL.md) 并照做，分支在 feature 下是集成分支，在 bug-fix 下是修复分支，正文用上面的三段汇报。之后，feature 按 [worktree.md](../implement/references/worktree.md) "清理"一节中"feature playbook 的集成 worktree"一行删除集成 worktree、保留集成分支。
 
 完成标准：用户已回答是否 push；同意时 PR 已创建，链接已告诉用户；feature 的集成 worktree 已删除。
 
