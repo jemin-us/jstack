@@ -17,6 +17,8 @@ Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
 
 所有 skill 都会按请求自动加载，也可以用 `/jstack:<名称>` 手动调用。泛化的新功能和 bug 请求由入口 `j-mode` 承接；指明 ticket 编号、spec 编号或待验收分支的请求直接加载对应的 skill。
 
+适用范围：一张 ticket 大小及以上的改动走 jstack，在 worktree 里实现并独立验收。改一行、改个文案这类很小的改动，agent 可能直接修改，不经过 jstack。
+
 | skill | 职责 |
 |---|---|
 | `j-mode` | 入口，选 playbook 并按步骤调用其他 skill |
@@ -26,6 +28,7 @@ Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
 | `implement` | 测试先行地实现并 commit |
 | `diagnosing-bugs` | 复现并定位 bug |
 | `accept` | 非作者 agent 独立验收 |
+| `pr` | push 已 commit 的分支并开 PR |
 | `create-verify-app` | 为项目生成 verify-app 类 skill |
 | `setup-jstack` | 检查 gh 环境、账号和默认仓库 |
 | `skill-creator-plus` | 新建、修改和审查 skill |

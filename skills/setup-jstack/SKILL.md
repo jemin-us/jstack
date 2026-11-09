@@ -59,6 +59,18 @@ python3 <本 skill 目录>/scripts/check_env.py .
 
 按"改了什么 / 验证了什么 / 还有什么"三段汇报。
 
+## 写入 GitHub 前检查账号
+
+其他 jstack skill 在 push、开 PR、创建或修改 issue 之前读取本节。运行：
+
+```bash
+gh api repos/$(gh repo view --json nameWithOwner --jq .nameWithOwner) --jq .permissions.push
+```
+
+输出 `true` 时继续。否则按第 3 步找出有写权限的已登录账号，运行 `gh auth switch -u <账号>`，并告诉用户切到了哪个账号；没有这样的账号时停下，请用户自己运行 `gh auth login`。
+
+完成标准：上面的命令输出 `true`。
+
 ## 示例
 
 用户说："/jstack:setup-jstack"

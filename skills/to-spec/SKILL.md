@@ -54,7 +54,7 @@ description: 当用户要求把已讨论清楚的需求或讨论结果写成 spe
 
 ### 6. 发布
 
-正文写入临时文件后创建 issue：
+先按 [setup-jstack](../setup-jstack/SKILL.md) 的"写入 GitHub 前检查账号"一节确认账号，再把正文写入临时文件后创建 issue：
 
 ```bash
 f=$(mktemp)  # 正文写进系统临时文件，不放进项目目录

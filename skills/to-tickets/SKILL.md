@@ -67,7 +67,7 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 ### 6. 按依赖顺序发布
 
-先发布阻塞别人的 ticket，这样后发布的 ticket 才能引用前面的编号。每张 ticket 的发布要求：
+先按 [setup-jstack](../setup-jstack/SKILL.md) 的"写入 GitHub 前检查账号"一节确认账号。然后先发布阻塞别人的 ticket，这样后发布的 ticket 才能引用前面的编号。每张 ticket 的发布要求：
 
 - 用 `--parent <spec 编号>` 挂到 spec 下，成为子 issue；
 - 用 `--blocked-by <编号>` 写入阻塞关系。
