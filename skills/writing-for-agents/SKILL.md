@@ -1,6 +1,6 @@
 ---
 name: writing-for-agents
-description: 当任务涉及编写、修改或审查给 agent 读的文字时使用，包括 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief、SKILL.md 正文和 description，以及 spec、ticket 模板。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
+description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief 时使用，也用于 SKILL.md 正文和 description、spec 和 ticket 模板等其他给 agent 读的文字。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
 ---
 
 # 写给 agent 的文字
