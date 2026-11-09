@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack open-pr"
+  short_description: "push 已 commit 的分支并开 PR"
+policy:
+  allow_implicit_invocation: true

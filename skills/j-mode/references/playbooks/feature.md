@@ -19,7 +19,7 @@
    6. **重试**：验收 FAIL 或合并冲突时，在原 worktree 里重新派一次 subagent，brief 里写明已有 worktree 的路径和起点，末尾附上失败详情，然后重新验收、合并。第二次仍失败，就把结论评论到 ticket 上，保持 open，并保留 worktree 和分支供用户排查。依赖这张 ticket 的 ticket 不再开工，其余照常进行。
    7. **波次收尾**：本波全部处理完后，在集成 worktree 里运行一次全量测试。失败时停止整个 playbook，进入收尾。
    完成标准：每张 ticket 都有 accept 结论，并已评论到 issue 上；集成分支的全量测试通过。spec 下的 ticket 全部关闭时，关闭 spec。
-5. **收尾**：按 j-mode 第 4 步汇报，另外列出因上游失败而没有开工的 ticket，以及保留下来的 worktree 路径和 worktree.md 里的删除命令。汇报后按 [worktree.md](../../../implement/references/worktree.md) 的"清理"一节删除集成 worktree，保留集成分支，并告诉用户分支名。
+5. **收尾**：按 j-mode 第 4 步汇报，另外列出因上游失败而没有开工的 ticket，以及保留下来的 worktree 路径和 worktree.md 里的删除命令。push、开 PR 和删除集成 worktree 按 j-mode 第 4 步执行。
 
 ## 注意
 
