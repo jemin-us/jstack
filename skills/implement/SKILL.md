@@ -5,7 +5,7 @@ description: 当用户指明要实现的 ticket 编号时使用，例如“实�
 
 # 实现
 
-按 ticket 或用户的明确描述编写代码，测试先行，完成后 commit 到当前分支。本 skill 可能由 subagent 执行，执行者只看这份文件和 ticket 就要能完成，不依赖对话记录。
+按 ticket 或用户的明确描述编写代码，测试先行，完成后 commit 到项目内 worktree 的新分支。本 skill 可能由 subagent 执行，执行者只看这份文件和 ticket 就要能完成，不依赖对话记录。
 
 ## 硬性规则
 
@@ -14,7 +14,7 @@ description: 当用户指明要实现的 ticket 编号时使用，例如“实�
 - 不修改已有测试来让检查通过。确实需要修改时，在 commit 信息里写明改了哪个测试、为什么。
 - 不放宽断言、不跳过测试、不扩大超时。
 - 有 ticket 时，ticket 里的每一条验收检查都要实际运行并通过。跑不通就停下汇报，不改写验收检查。
-- 完成后 commit 到当前分支（见 ADR 0003）。不 push，不开 PR。
+- 改代码前按 [references/worktree.md](references/worktree.md) 新建 worktree 和新分支，之后只在 worktree 里改文件和 commit（见 ADR 0003）。不切换、不改动用户主目录的分支和文件。不 push，不开 PR。
 
 ## 流程
 
@@ -25,7 +25,13 @@ description: 当用户指明要实现的 ticket 编号时使用，例如“实�
 
 完成标准：能说出要交付的行为、验收检查清单（没有 ticket 时为空）、约束和不做的范围。
 
-### 2. 确定接缝
+### 2. 建 worktree
+
+按 [references/worktree.md](references/worktree.md) 的"开始"一节新建 worktree 和新分支。调用方给了基准分支和分支名时照用；给了已有 worktree 时直接在其中工作。
+
+完成标准：记下 worktree 绝对路径、新分支名、起点 commit，之后每条命令都在 worktree 里执行。
+
+### 3. 确定接缝
 
 接缝是观察行为的公开边界，测试只写在接缝上。按以下顺序确定：
 
@@ -35,7 +41,7 @@ description: 当用户指明要实现的 ticket 编号时使用，例如“实�
 
 完成标准：写下本次要测试的接缝清单，接缝越少越好。
 
-### 3. 判断是否为重构
+### 4. 判断是否为重构
 
 如果本次改动不应改变行为（重构、搬移、改名），动结构前先确认：
 
@@ -45,7 +51,7 @@ description: 当用户指明要实现的 ticket 编号时使用，例如“实�
 
 完成标准：每一段要移动的行为都有一条能通过的测试。
 
-### 4. 红绿循环
+### 5. 红绿循环
 
 每一轮做一个切片：
 
@@ -57,51 +63,62 @@ description: 当用户指明要实现的 ticket 编号时使用，例如“实�
 
 完成标准：交付行为全部有测试覆盖，相关测试和类型检查通过。
 
-### 5. 运行验收检查和全量测试
+### 6. 运行验收检查和全量测试
 
 1. 按 ticket 顺序逐条运行验收检查，记下实际输出。
 2. 运行一次全量测试和类型检查。
 
 完成标准：每条验收检查的实际输出都和期望结果一致，全量测试通过。不一致时按"常见问题"处理。
 
-### 6. 提交
+### 7. 提交
 
 1. 用 `git status` 和 `git diff` 确认只包含本次改动，不提交无关文件。
-2. commit 到当前分支。有 ticket 时，提交信息写明 ticket 编号。修改了已有测试时，在提交信息里逐个写明被改的测试文件和理由，accept 只从提交信息读取这些理由。
+2. 在 worktree 里 commit 到新分支。有 ticket 时，提交信息写明 ticket 编号。修改了已有测试时，在提交信息里逐个写明被改的测试文件和理由，accept 只从提交信息读取这些理由。
 
-完成标准：`git status` 干净，`git log -1` 显示本次提交。
+完成标准：worktree 里 `git status` 干净，`git log -1` 显示本次提交。
 
-### 7. 收尾汇报
+### 8. 验收并清理
+
+由 j-mode 派发时（brief 中写明），跳过这一步，验收和清理由 j-mode 负责。
+
+单独使用时，commit 后直接读取 [accept](../accept/SKILL.md) 并照做，不提示用户手动调用。验收范围是"起点..新分支 HEAD"，在 worktree 里执行。结论为 PASS 或 PASS+NOTES 时，按 [references/worktree.md](references/worktree.md) 的"清理"一节删除 worktree、保留分支；结论为 FAIL 时保留两者。
+
+完成标准：拿到 accept 结论，worktree 已按结论删除或保留。
+
+### 9. 收尾汇报
 
 按以下三段写，每个论断标明"已运行""推断"或"未验证"：
 
 ```markdown
 **改了什么**
 - 改动的行为和主要文件，commit 哈希
+- worktree 绝对路径、新分支名、起点 commit；单独使用时写明 worktree 已删除或保留，以及分支名
 
 **验证了什么**
 - 验收检查 1：`<命令>` → 实际输出（已运行）
 - 全量测试：通过 / 失败（已运行）
+- 单独使用时：accept 结论（已运行）
 
 **还有什么**
 - 修改过的已有测试及理由
 - 所做的假设、选定的接缝（作为 subagent 执行时）
-- 没有 ticket 时写：没有验收检查，未经独立验收
+- 第 2 步发现的遗留 jstack worktree
+- 没有 ticket 时写：没有 ticket 验收检查，并写明 accept 用的检查来自哪里
 ```
 
 ## 示例
 
 用户说："实现 #42"
 
-执行：读取 #42，验收检查是 `curl -s localhost:3000/health` → `OK`；在路由层写一条健康检查测试，确认失败；实现接口，测试通过；运行验收检查得到 `OK`；全量测试通过；commit。
+执行：读取 #42，验收检查是 `curl -s localhost:3000/health` → `OK`；建 worktree `.claude/worktrees/jstack-health-check` 和分支 `jstack/health-check`；在路由层写一条健康检查测试，确认失败；实现接口，测试通过；运行验收检查得到 `OK`；全量测试通过；commit；执行 accept 得到 PASS；删除 worktree。
 
-结果：汇报 commit 哈希、验收检查的实际输出 `OK`，"还有什么"写"无"。
+结果：汇报 commit 哈希、验收检查的实际输出 `OK`、accept 结论 PASS，告诉用户分支 `jstack/health-check` 已保留，"还有什么"写"无"。
 
 用户说："把 formatPrice 从 utils 挪到 money 模块"
 
-执行：判定为重构；确认已有的 formatPrice 测试通过；搬移并更新调用方；测试仍通过；全量测试通过；commit。
+执行：建 worktree 和新分支；判定为重构；确认已有的 formatPrice 测试通过；搬移并更新调用方；测试仍通过；全量测试通过；commit；执行 accept。
 
-结果：汇报中注明"没有验收检查，未经独立验收"。
+结果：汇报中注明"没有 ticket 验收检查"，附上 accept 结论和保留的分支名。
 
 ## 常见问题
 
