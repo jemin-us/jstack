@@ -40,7 +40,7 @@ description: 当用户要求把已讨论清楚的需求或讨论结果写成 spe
 
 ### 4. 生成 spec
 
-读取 [references/spec-template.md](references/spec-template.md)，按模板生成中文标题和正文。
+读取 [references/spec-template.md](references/spec-template.md)，按模板生成中文标题和正文，写法按 [writing-for-agents](../writing-for-agents/SKILL.md)。
 
 完成标准：每个章节都有内容；行为每条都能被验证；"待定"写的是"无"。
 

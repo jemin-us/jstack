@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack writing-for-agents"
+  short_description: "写和审查给 agent 读的文字"
+policy:
+  allow_implicit_invocation: true
