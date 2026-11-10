@@ -1,6 +1,6 @@
 # jstack
 
-一套个人工程方法论，打包成同一个插件，供 Claude Code 和 Codex 两个 Harness 加载使用。参考 pstack 与 mattpocock skills。
+一套个人工程方法论，打包成同一个插件，供 Claude Code 和 Codex 两个 Harness 加载使用。
 
 ## Language
 
@@ -11,6 +11,10 @@ _Avoid_: 平台、客户端、宿主
 **Adapter**:
 一份按 Harness 写的对照表，说明 jstack 正文里的通用说法在该 Harness 上对应什么工具或写法。
 _Avoid_: shim、兼容层
+
+**自动执行**:
+mode 发起的流程所处的状态：被读取的 skill 跳过发布 spec、发布 ticket、push 前的用户确认，brainstorm 只问一轮难以回头的决定。用户单独调用这些 skill 时不处于自动执行。
+_Avoid_: 无人值守、全自动、autopilot
 
 **Brief**:
 交给 subagent 的完整任务说明，以文件形式放在 skill 的 `references/` 下，由 Harness 自带的通用 agent 执行。
@@ -49,7 +53,7 @@ _Avoid_: 主分支、feature 分支
 _Avoid_: 批次、wave
 
 **Playbook**:
-针对一类任务的固定执行步骤，由 j-mode 选中后逐步执行，每一步都写明完成标准。
+针对一类任务的固定执行步骤，由 mode 选中后逐步执行，每一步都写明完成标准。
 _Avoid_: 工作流模板、recipe
 
 **Skill**:

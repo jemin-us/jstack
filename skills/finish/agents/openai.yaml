@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack finish"
+  short_description: "单独使用 implement 或 diagnosing-bugs 时的验收、清理和开 PR"
+policy:
+  allow_implicit_invocation: false

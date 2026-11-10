@@ -1,33 +1,28 @@
 ---
 name: implement
-description: "当用户指明要实现的 ticket 编号时使用，例如“实现 #42”“按 #42 写代码”；也用于已讨论清楚、可以直接编码的具体改动或重构。测试先行地编写代码并 commit。泛化的新功能或 bug 请求使用 j-mode；独立验收使用 accept。"
+description: "当用户指明要实现的 ticket 编号时使用，例如“实现 #42”“按 #42 写代码”；也用于已讨论清楚、可以直接编码的具体改动或重构。测试先行地编写代码并 commit。泛化的新功能或 bug 请求使用 mode；独立验收使用 accept。"
 ---
 
 # 实现
 
-按 ticket 或用户的明确描述编写代码，测试先行，完成后 commit 到项目内 worktree 的新分支。本 skill 可能由 subagent 执行，执行者只看这份文件和 ticket 就要能完成，不依赖对话记录。
+按 ticket 或用户的明确描述编写代码，测试先行，完成后 commit 到项目内 worktree 的新分支。
 
 ## 硬性规则
 
-- 先写会失败的测试，再写刚好让它通过的代码。一次只做一小片。
-- 只在约定的接缝上测试行为，不测实现细节。好坏测试的判断见 [references/testing.md](references/testing.md)。
-- 不修改已有测试来让检查通过。确实需要修改时，在 commit 信息里写明改了哪个测试、为什么。
-- 不放宽断言、不跳过测试、不扩大超时。
-- 有 ticket 时，ticket 里的每一条验收检查都要实际运行并通过。跑不通就停下汇报，不改写验收检查。
-- 改代码前按 [references/worktree.md](references/worktree.md) 新建 worktree 和新分支，之后只在 worktree 里改文件和 commit（见 ADR 0003）。不切换、不改动用户主目录的分支和文件。push 和开 PR 交给 [pr](../pr/SKILL.md)。
+- 不修改已有测试来让检查通过，不放宽断言、不跳过测试、不扩大超时。确实需要修改已有测试时，按第 7 步在提交信息里写明。
 
 ## 流程
 
 ### 1. 读取输入
 
 - 给了 ticket 编号：运行 `gh issue view <编号> --json number,title,body,comments`，读全文。开工前先说明"正在实现 #<编号> <标题>"。
-- 没有 ticket：以用户的描述为准。描述含糊时，向用户提问；作为 subagent 执行时无法提问，按最保守的理解实现，并在收尾写明所做的假设。
+- 没有 ticket：以用户的描述为准。描述含糊时，向用户提问；自动执行或作为 subagent 执行时不提问，按最保守的理解实现，并在收尾写明所做的假设。写代码前，派一个 subagent 写验收检查，派法按 [harness](../harness/SKILL.md)：brief 里只放用户的原话和仓库路径，不放自己的实现思路，要求它读相关代码后返回 1–3 条"命令或操作 → 期望结果"，重构时返回已有测试的命令。
 
-完成标准：能说出要交付的行为、验收检查清单（没有 ticket 时为空）、约束和不做的范围。
+完成标准：能说出要交付的行为、至少一条验收检查、约束和不做的范围。
 
 ### 2. 建 worktree
 
-按 [references/worktree.md](references/worktree.md) 的"开始"一节新建 worktree 和新分支。调用方给了基准分支和分支名时照用；给了已有 worktree 时直接在其中工作。
+按 [worktree](../worktree/SKILL.md) 的"开始"一节新建 worktree 和新分支。调用方给了基准分支和分支名时照用；给了已有 worktree 时直接在其中工作。
 
 完成标准：记下 worktree 绝对路径、新分支名、起点 commit，之后每条命令都在 worktree 里执行。
 
@@ -36,8 +31,8 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 接缝是观察行为的公开边界，测试只写在接缝上。按以下顺序确定：
 
 1. ticket 的"上下文"或所属 spec 的"测试接缝"写了接缝，直接采用。
-2. 没写时，交互执行就向用户提问："要在哪些公开接口上测试？"，并给每个候选接缝写一句能测到什么、测不到什么。
-3. 作为 subagent 执行时，选能覆盖本次行为的最高一层接缝，并在收尾写明选择。
+2. 没写时，用户单独调用本 skill 就向用户提问："要在哪些公开接口上测试？"，并给每个候选接缝写一句能测到什么、测不到什么。
+3. 自动执行或作为 subagent 执行时，选能覆盖本次行为的最高一层接缝，并在收尾写明选择。
 
 完成标准：写下本次要测试的接缝清单，接缝越少越好。
 
@@ -59,7 +54,7 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 2. 写刚好让它通过的代码，运行并确认通过。
 3. 运行改动相关的类型检查和单个测试文件。
 
-下一轮的测试根据上一轮学到的东西再写，不要先把所有测试写完。
+下一轮的测试根据上一轮学到的东西再写，不要先把所有测试写完。拿不准一条测试是否值得保留时，读取 [references/testing.md](references/testing.md)。
 
 完成标准：交付行为全部有测试覆盖，相关测试和类型检查通过。
 
@@ -77,36 +72,34 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 
 完成标准：worktree 里 `git status` 干净，`git log -1` 显示本次提交。
 
-### 8. 验收并清理
-
-由 j-mode 派发时（brief 中写明），跳过这一步，验收和清理由 j-mode 负责。
-
-单独使用时，commit 后直接读取 [accept](../accept/SKILL.md) 并照做，不提示用户手动调用。验收范围是"起点..新分支 HEAD"，在 worktree 里执行。结论为 PASS 或 PASS+NOTES 时，按 [references/worktree.md](references/worktree.md) 的"清理"一节删除 worktree、保留分支；结论为 FAIL 时保留两者。
-
-完成标准：拿到 accept 结论，worktree 已按结论删除或保留。
-
-### 9. 收尾汇报
+### 8. 写汇报
 
 按以下三段写，每个论断标明"已运行""推断"或"未验证"：
 
 ```markdown
 **改了什么**
 - 改动的行为和主要文件，commit 哈希
-- worktree 绝对路径、新分支名、起点 commit；单独使用时写明 worktree 已删除或保留，以及分支名
+- worktree 绝对路径、新分支名、起点 commit
 
 **验证了什么**
 - 验收检查 1：`<命令>` → 实际输出（已运行）
 - 全量测试：通过 / 失败（已运行）
-- 单独使用时：accept 结论（已运行）
 
 **还有什么**
 - 修改过的已有测试及理由
 - 所做的假设、选定的接缝（作为 subagent 执行时）
 - 第 2 步发现的遗留 jstack worktree
-- 没有 ticket 时写：没有 ticket 验收检查，并写明 accept 用的检查来自哪里
+- 没有 ticket 时写：验收检查由 subagent 按用户描述写出
 ```
 
-单独使用且 accept 结论为 PASS 或 PASS+NOTES 时，汇报后读取 [pr](../pr/SKILL.md) 并照做，分支是第 2 步建的新分支，正文用上面的三段汇报。由 j-mode 派发时跳过，由 j-mode 收尾。
+完成标准：三段都已写出。
+
+### 9. 交接
+
+- 由 mode 派发时（brief 中写明）：把汇报返回给 mode，到此结束。验收、清理和开 PR 由 mode 负责。
+- 单独使用时：读取 [finish](../finish/SKILL.md) 并照做，传入 worktree 绝对路径、新分支名、起点 commit、验收检查和上一步的汇报。
+
+完成标准：汇报已返回给 mode，或 finish 的每一步都已完成。
 
 ## 示例
 
@@ -120,7 +113,7 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 
 执行：建 worktree 和新分支；判定为重构；确认已有的 formatPrice 测试通过；搬移并更新调用方；测试仍通过；全量测试通过；commit；执行 accept。
 
-结果：汇报中注明"没有 ticket 验收检查"，附上 accept 结论和保留的分支名。
+结果：汇报中注明验收检查由 subagent 写出（已有的 formatPrice 测试命令），附上 accept 结论和保留的分支名。
 
 ## 常见问题
 

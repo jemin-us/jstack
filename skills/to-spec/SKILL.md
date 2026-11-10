@@ -1,23 +1,15 @@
 ---
 name: to-spec
-description: 当用户要求把已讨论清楚的需求或讨论结果写成 spec、发布 spec issue 时使用，例如“把讨论结果写成 spec”。需求还不清楚时使用 brainstorm；泛化的新功能请求使用 j-mode；拆 ticket 使用 to-tickets。
+description: 当用户要求把已讨论清楚的需求或讨论结果写成 spec、发布 spec issue 时使用，例如“把讨论结果写成 spec”。按模板整理成 spec 并发布为 GitHub issue。需求还不清楚时使用 brainstorm；泛化的新功能请求使用 mode；拆 ticket 使用 to-tickets。
 ---
 
 # 生成 spec
-
-把对话里已经讨论清楚的需求整理成 spec，发布为 GitHub issue。
-
-## 硬性规则
-
-- "待定"不为空时不发布。先把待定项逐条交给用户决定，清空后再继续。
-- 发布前必须把 spec 全文给用户确认。用户确认前，不执行任何创建 issue 的命令。
-- 正文严格按 [references/spec-template.md](references/spec-template.md) 的章节书写，行为一节每条都用"当…时，系统应…"。
 
 ## 流程
 
 ### 1. 读取项目配置
 
-在项目目录运行 `gh repo view --json nameWithOwner`，确认 issue 要发到哪个仓库。gh 根据 git remote 识别仓库；报错时提示用户先运行 jstack skill `setup-jstack`。
+在项目目录运行 `gh repo view --json nameWithOwner`，确认 issue 要发到哪个仓库。报错时提示用户先运行 jstack skill `setup`。
 
 完成标准：拿到 `owner/repo`。
 
@@ -44,17 +36,19 @@ description: 当用户要求把已讨论清楚的需求或讨论结果写成 spe
 
 完成标准：每个章节都有内容；行为每条都能被验证；"待定"写的是"无"。
 
-"待定"不为空时：只有一两条，直接逐条问用户，按回答更新 spec；需要大范围重新讨论时，停下来建议用户先使用 jstack skill `brainstorm`。
+"待定"不为空时：只有一两条，直接逐条问用户，按回答更新 spec；需要大范围重新讨论时，停下来建议用户先使用 jstack skill `brainstorm`。自动执行时不问：每条按推荐答案定，写进"实现决策"并标"（假设）"。
 
 ### 5. 用户确认
 
+自动执行时跳过本步。
+
 把标题和正文全文展示给用户，请用户确认或修改。
 
-完成标准：用户明确同意发布。用户提出修改时，改完重新展示。
+完成标准：用户明确同意发布，或本次是自动执行。用户提出修改时，改完重新展示；用户同意前不执行任何创建 issue 的命令。
 
 ### 6. 发布
 
-先按 [setup-jstack](../setup-jstack/SKILL.md) 的"写入 GitHub 前检查账号"一节确认账号，再把正文写入临时文件后创建 issue：
+先按 [setup](../setup/SKILL.md) 的"写入 GitHub 前检查账号"一节确认账号，再把正文写入临时文件后创建 issue：
 
 ```bash
 f=$(mktemp)  # 正文写进系统临时文件，不放进项目目录
@@ -91,4 +85,4 @@ gh issue create --repo <仓库> --title "<中文标题>" --body-file "$f"
 
 现象：生成过程中发现行为互相矛盾，或缺少关键决定。
 原因：讨论阶段没有覆盖到。
-处理：写进"待定"，按第 4 步处理：一两条直接问用户，大范围的回到 `brainstorm`。
+处理：写进"待定"，按第 4 步处理。

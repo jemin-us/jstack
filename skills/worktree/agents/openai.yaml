@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack worktree"
+  short_description: "新建和清理 jstack 的 git worktree"
+policy:
+  allow_implicit_invocation: false

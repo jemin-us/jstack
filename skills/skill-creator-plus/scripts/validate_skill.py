@@ -75,7 +75,8 @@ def validate(folder: Path):
     else:
         if len(desc) > 1024:
             errors.append(f"description 超过 1024 字符（{len(desc)}）")
-        if not re.search(r"use when|use for|当|用于|触发|时使用", desc, re.I):
+        # 手动调用的 skill 不靠 description 触发
+        if fm.get("disable-model-invocation") is not True and not re.search(r"use when|use for|当|用于|触发|时使用", desc, re.I):
             warns.append("description 没写触发场景（例如“当……时使用”）")
         loose = sorted(set(w for w in WORD.findall(desc) if w not in TERMS))
         if CJK.search(desc) and loose:

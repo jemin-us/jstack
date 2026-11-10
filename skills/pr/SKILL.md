@@ -1,6 +1,6 @@
 ---
 name: pr
-description: 当用户要求 push 分支并开 PR、发 PR、提 pull request 时使用；j-mode、implement、diagnosing-bugs 收尾时也读取它。只 push 已 commit 的分支并创建 PR，不 commit、不合并。写代码使用 implement；验收使用 accept。
+description: 当用户要求 push 分支并开 PR、发 PR、提 pull request 时使用；mode、finish 收尾时也读取它。只 push 已 commit 的分支并创建 PR，不 commit、不合并。写代码使用 implement；验收使用 accept。
 ---
 
 # push 并开 PR
@@ -8,9 +8,7 @@ description: 当用户要求 push 分支并开 PR、发 PR、提 pull request �
 ## 硬性规则
 
 - 只 push 已经 commit 的内容。commit 由 implement 或 diagnosing-bugs 完成。
-- 默认分支上的提交不开 PR，停下告诉用户。
-- push 被拒时停下，把报错交给用户；不使用 `--force`。
-- PR 创建后由用户合并。
+- 不使用 `--force`。
 
 ## 流程
 
@@ -22,19 +20,19 @@ description: 当用户要求 push 分支并开 PR、发 PR、提 pull request �
 - `<默认分支>`：`gh repo view --json defaultBranchRef --jq .defaultBranchRef.name`。
 - 运行 `git log --oneline <默认分支>..<分支>`。
 
-完成标准：`<分支>` 不是 `<默认分支>`，且上面的命令至少列出一个 commit。没有 commit 时停下，告诉用户没有可提交的内容。
+完成标准：`<分支>` 不是 `<默认分支>`，且上面的命令至少列出一个 commit。`<分支>` 就是默认分支，或者没有 commit 时，停下告诉用户原因。
 
 ### 2. 询问
 
-由 j-mode、implement 或 diagnosing-bugs 收尾时读取本 skill：问用户一次"要 push `<分支>` 并开 PR 吗？"。用户不同意时，告诉用户分支名并结束。
+自动执行时，或用户直接要求 push 或开 PR 时，跳过本步。
 
-用户直接要求 push 或开 PR 时，跳过这一步。
+其余情况，即不是自动执行、由 finish 读取本 skill 时：问用户一次"要 push `<分支>` 并开 PR 吗？"。用户不同意时，告诉用户分支名并结束。
 
-完成标准：用户已同意，或本次是用户直接要求的。
+完成标准：用户已同意，或本步已跳过。
 
 ### 3. 检查账号并 push
 
-1. 按 [setup-jstack](../setup-jstack/SKILL.md) 的"写入 GitHub 前检查账号"一节确认当前 gh 账号有写权限。
+1. 按 [setup](../setup/SKILL.md) 的"写入 GitHub 前检查账号"一节确认当前 gh 账号有写权限。
 2. 运行 `git push -u origin <分支>`。
 
 完成标准：push 成功，`git status -sb` 显示分支与远端同步。
@@ -57,11 +55,11 @@ description: 当用户要求 push 分支并开 PR、发 PR、提 pull request �
 
 ## 示例
 
-j-mode 完成 feature 后读取本 skill：分支是集成分支 `jstack/spec-12`，`git log main..jstack/spec-12` 列出 6 个 commit；问用户"要 push `jstack/spec-12` 并开 PR 吗？"，用户同意；账号检查通过；push 后没有已有 PR，用 j-mode 的三段汇报作正文创建 PR。
+mode 完成 feature 后读取本 skill：分支是集成分支 `jstack/spec-12`，`git log main..jstack/spec-12` 列出 6 个 commit；自动执行，跳过询问；账号检查通过；push 后没有已有 PR，用 mode 的三段汇报作正文创建 PR。
 
 结果：返回 PR 链接，提醒合并由用户决定。
 
-用户说"把当前分支提个 PR"：分支是 `jstack/fix-csv-last-row`，跳过询问，检查账号、push，按 `git log` 写三段正文后创建 PR。
+用户说"把当前分支提个 PR"：分支是 `jstack/fix-csv-last-row`，检查账号、push，按 `git log` 写三段正文后创建 PR。
 
 ## 常见问题
 

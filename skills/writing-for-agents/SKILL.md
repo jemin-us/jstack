@@ -1,6 +1,6 @@
 ---
 name: writing-for-agents
-description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief 时使用，也用于 SKILL.md 正文和 description、spec 和 ticket 模板等其他给 agent 读的文字。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
+description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief 时使用，也用于 SKILL.md 正文和 description、spec 和 ticket 模板等其他给 agent 读的文字。区分步骤和参考，写指针和完成标准，逐句修剪。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
 ---
 
 # 写给 agent 的文字
@@ -38,7 +38,7 @@ description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示
 
 ### 4. 中文专项检查
 
-用中文写时，读 [references/chinese.md](references/chinese.md) 并逐条检查，重点是：控制长度用结构或脚本，不写精确字数；命令、路径、标识符保留英文原文。
+用中文写时，读 [references/chinese.md](references/chinese.md) 并逐条检查。
 
 完成标准：chinese.md 的每一条都已检查。
 

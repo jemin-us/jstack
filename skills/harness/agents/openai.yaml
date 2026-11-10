@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack harness"
+  short_description: "jstack 通用说法在各 Harness 中的对应操作"
+policy:
+  allow_implicit_invocation: false
