@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack help"
+  short_description: "说明该用哪个 skill"
+policy:
+  allow_implicit_invocation: true

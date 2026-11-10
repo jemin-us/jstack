@@ -1,16 +1,12 @@
 ---
 name: to-tickets
-description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 to-spec；泛化的新功能请求使用 j-mode。"
+description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 to-spec；泛化的新功能请求使用 mode。"
 ---
 
 # 拆 ticket
 
 ## 硬性规则
 
-- 切分方案经用户确认之前，不创建任何 issue。
-- 每张 ticket 必须自包含：一个没有对话上下文的 subagent，只读这张 ticket 就能开工。
-- 每张 ticket 有 1–3 条验收检查，格式为 `` `<命令或操作>` → <期望结果> ``。需要超过 3 条，说明切得太粗，继续拆。
-- 每张 ticket 的约束中都写上“不改动已有测试来让验收通过”。
 - 不修改 spec issue 本身：不改正文、不关闭。
 - 只在 spec 所在的仓库里发布 ticket。需求跨多个仓库时，每个仓库按各自的 spec 分别拆。
 
@@ -18,7 +14,7 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 ### 1. 读取配置
 
-在项目目录运行 `gh repo view --json nameWithOwner`，确认 ticket 要发到哪个仓库。报错时提示用户先运行 setup-jstack。
+在项目目录运行 `gh repo view --json nameWithOwner`，确认 ticket 要发到哪个仓库。报错时提示用户先运行 setup。
 
 完成标准：拿到 `owner/repo`。
 
@@ -42,9 +38,11 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 为每张 ticket 写明它被哪些 ticket 阻塞。没有阻塞的可以立即开工。
 
-完成标准：每条 spec 行为都落到至少一张 ticket；每张 ticket 都写得出 1–3 条验收检查。
+完成标准：每条 spec 行为都落到至少一张 ticket；每张 ticket 都写得出 1–3 条验收检查。需要超过 3 条的，说明切得太粗，继续拆。
 
 ### 4. 和用户确认
+
+自动执行时跳过本步。
 
 按编号列出方案，每张写明三项：
 
@@ -54,7 +52,7 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 向用户提问：粒度是否合适？阻塞关系是否只保留了真正的依赖？有没有需要合并或继续拆的？按反馈修改，直到用户明确同意。
 
-完成标准：用户明确同意当前方案。
+完成标准：用户明确同意当前方案，或本次是自动执行。同意之前不创建任何 issue。
 
 ### 5. 写 ticket 正文
 
@@ -67,18 +65,13 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 ### 6. 按依赖顺序发布
 
-先按 [setup-jstack](../setup-jstack/SKILL.md) 的"写入 GitHub 前检查账号"一节确认账号。然后先发布阻塞别人的 ticket，这样后发布的 ticket 才能引用前面的编号。每张 ticket 的发布要求：
+先按 [setup](../setup/SKILL.md) 的"写入 GitHub 前检查账号"一节确认账号。然后先发布阻塞别人的 ticket，这样后发布的 ticket 才能引用前面的编号。每张 ticket 都挂到 spec 下成为子 issue，并写入阻塞关系，命令见 [references/github.md](references/github.md)。
 
-- 用 `--parent <spec 编号>` 挂到 spec 下，成为子 issue；
-- 用 `--blocked-by <编号>` 写入阻塞关系。
-
-命令见 [references/github.md](references/github.md)。
-
-完成标准：所有 ticket 都已创建，都是 spec 的子 issue，阻塞关系与确认的方案一致。
+完成标准：所有 ticket 都已创建，都是 spec 的子 issue，阻塞关系与第 3 步的方案一致。
 
 ### 7. 收尾
 
-列出已创建的 ticket，每张写编号、标题和被阻塞于。提示下一步：用 j-mode 执行 feature playbook，或者按顺序逐张调用 implement。
+列出已创建的 ticket，每张写编号、标题和被阻塞于。提示下一步：用 mode 执行 feature playbook，或者按顺序逐张调用 implement。
 
 ## 示例
 
@@ -99,8 +92,8 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 现象：`gh issue create` 报错 `unknown flag: --parent` 或 `--blocked-by`。
 原因：gh 版本太旧。
-处理：停止发布，提示用户升级 gh，或者运行 setup-jstack 检查环境。已经创建的 ticket 列出来告诉用户，不要重复创建。
+处理：停止发布，提示用户升级 gh，或者运行 setup 检查环境。已经创建的 ticket 列出来告诉用户，不要重复创建。
 
 现象：发布到一半失败。
 原因：网络中断、权限不足等。
-处理：按 [references/github.md](references/github.md) 的补救命令列出 spec 下已经创建的子 issue，只补发缺少的那几张，并补上阻塞关系。
+处理：按 [references/github.md](references/github.md) 列出 spec 下已经创建的子 issue，只补发缺少的那几张，再用其中的补救命令补上阻塞关系。

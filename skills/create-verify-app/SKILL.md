@@ -1,6 +1,6 @@
 ---
 name: create-verify-app
-description: 当任务涉及为项目生成或更新 verify-app 类 skill、让 agent 像用户一样启动和操作 app 并留下证据时使用。执行一张 ticket 的验收使用 accept。
+description: 当任务涉及为项目生成或更新 verify-app 类 skill、让 agent 像用户一样启动和操作 app 并留下证据时使用。探测项目的启动和操作方式，生成项目本地的验证 skill 并亲自跑通。执行一张 ticket 的验收使用 accept。
 ---
 
 # 生成项目验证 skill
@@ -9,12 +9,7 @@ description: 当任务涉及为项目生成或更新 verify-app 类 skill、让 
 
 ## 硬性规则
 
-- 关键：生成之后必须按它亲自跑一遍，Launch、Doctor、Drive、Evidence、Cleanup 全部跑通，并且确认 Cleanup 之后证据还在。没跑通过的 skill 只是草稿，不能交付。
 - 不许为了让流程跑通而放宽操作路径。预置数据缺了某个前提，就把这条路径记为失败，原因写进该功能的"注意事项"，不要改步骤绕过去。
-- 实体文件放在 `.agents/skills/verify-<app>/`，再建 symlink `.claude/skills/verify-<app>` 指向它。不要在两处各放一份副本。
-- 项目里已经有 verify 类 skill 时，在原有基础上更新，不另建一个。
-- 命令、选择器、路由必须取自这个仓库的真实内容。生成物里不能留占位符。
-- Cleanup 只结束本次运行启动的进程，不按进程名去杀进程，也不删除证据。
 
 ## 流程
 
@@ -47,7 +42,7 @@ ls -d .agents/skills/verify-* .claude/skills/verify-* 2>/dev/null
 
 按 [references/skill-template.md](references/skill-template.md) 生成以下文件：
 
-- `.agents/skills/verify-<app>/SKILL.md`：包含 Launch、Doctor、Drive、Evidence、Cleanup 五段。
+- `.agents/skills/verify-<app>/SKILL.md`：包含"启动""自检""操作""证据""清理"五节。
 - `.agents/skills/verify-<app>/agents/openai.yaml`：设置 `allow_implicit_invocation: false`。
 - `.agents/skills/verify-<app>/scripts/`：只有确实需要辅助脚本时才建。脚本要可执行，调用方式写进正文。
 
@@ -60,11 +55,13 @@ ln -s ../../.agents/skills/verify-<app> .claude/skills/verify-<app>
 
 检查项目的 `.gitignore`，没有 `.verify-evidence/` 这一行就追加。
 
-完成标准：`ls .claude/skills/verify-<app>/SKILL.md` 能读到文件；frontmatter 里有 `name`、`description`、`disable-model-invocation: true`；`.gitignore` 包含 `.verify-evidence/`。
+最后读取 [skill-creator-plus](../skill-creator-plus/SKILL.md)，对 `.agents/skills/verify-<app>` 运行它的校验脚本，清除全部"错误"。
+
+完成标准：`ls .claude/skills/verify-<app>/SKILL.md` 能读到文件；校验脚本没有"错误"；frontmatter 里有 `disable-model-invocation: true`；`.gitignore` 包含 `.verify-evidence/`。
 
 ### 4. 建功能清单
 
-按 [references/feature-map.md](references/feature-map.md)，在 `features/` 下建一份索引，再为最主要的 3 到 5 个用户功能各写一个文件。功能从路由、命令、菜单和文档里找。每个文件都要写清楚：用户从哪些入口进入、每一步的操作命令和可观察的结果、怎样证明这个功能是好的。
+按 [references/feature-map.md](references/feature-map.md)，在 `features/` 下建一份索引 `index.md`，再为最主要的 3 到 5 个用户功能各写一个文件。功能从路由、命令、菜单和文档里找。每个文件都要写清楚：用户从哪些入口进入、每一步的操作命令和可观察的结果、怎样证明这个功能是好的。
 
 完成标准：索引列出全部功能文件，每个功能文件都有固定的四个小节，且没有占位符。
 
@@ -72,16 +69,16 @@ ln -s ../../.agents/skills/verify-<app> .claude/skills/verify-<app>
 
 按生成的 skill 从头执行：
 
-1. Launch，等到"可用"信号出现。
-2. Doctor，确认结果通过。
-3. Drive，挑功能清单里的一个功能，走完它的全部步骤。
-4. Evidence，把证据存到 skill 指定的位置。
-5. Cleanup。
+1. 启动，等到"可用"信号出现。
+2. 自检，确认结果通过。
+3. 操作：挑功能清单里的一个功能，走完它的全部步骤。
+4. 把证据存到 skill 指定的位置。
+5. 清理。
 6. 再列一次证据目录，确认证据还在。
 
-任何一步失败，先跑 Cleanup，再修改生成物，然后从第 1 步重新跑。如果是在替代环境里验证的（例如用本地栈代替远程环境），列出替代环境做了、真实环境不会做的步骤，并把这些步骤标为"未验证"。
+任何一步失败，先清理，再修改生成物，然后从第 1 步重新跑。如果是在替代环境里验证的（例如用本地栈代替远程环境），列出替代环境做了、真实环境不会做的步骤，并把这些步骤标为"未验证"。
 
-完成标准：6 步全部通过，并贴出证据路径和 Doctor 的输出。
+完成标准：6 步全部通过，并贴出证据路径和自检的输出。没跑通的 skill 不进入第 6 步。
 
 ### 6. 交付
 
@@ -102,7 +99,7 @@ ln -s ../../.agents/skills/verify-<app> .claude/skills/verify-<app>
 2. 探测到这是一个 Next.js Web 应用，启动命令 `pnpm dev`，端口 3000，仓库里有 Playwright。
 3. 生成 `.agents/skills/verify-shop4-web/`，并建好 symlink。
 4. 功能清单写了"登录""商品列表""下单"三个功能。
-5. 按生成的 skill 亲自跑通"登录"，证据存在 `.verify-evidence/login/`，Cleanup 之后这些证据仍然存在。
+5. 按生成的 skill 亲自跑通"登录"，证据存在 `.verify-evidence/login/`，清理之后这些证据仍然存在。
 
 结果：交付 skill 路径和证据路径，`.gitignore` 已包含 `.verify-evidence/`。
 
@@ -114,10 +111,10 @@ ln -s ../../.agents/skills/verify-<app> .claude/skills/verify-<app>
 
 现象：按 README 的命令启动后，app 不可用。
 原因：仓库本身跑不起来，比如依赖没装、迁移没执行、缺少某个配置文件。
-处理：先修好或准确报告问题，再生成 skill。有些缺失的东西和验证本身无关，但会挡住启动，比如一份示例配置。这类东西可以由生成的 skill 补上，标注为"验证用临时文件"，并在 Cleanup 里删除。
+处理：先修好或准确报告问题，再生成 skill。有些缺失的东西和验证本身无关，但会挡住启动，比如一份示例配置。这类东西可以由生成的 skill 补上，标注为"验证用临时文件"，并在"清理"一节里删除。
 
-现象：Cleanup 之后证据不见了。
-原因：证据目录放在了 Cleanup 会删除的临时目录里。
+现象：清理之后证据不见了。
+原因：证据目录放在了清理时会删除的临时目录里。
 处理：把证据目录移到项目里的固定位置，例如 `.verify-evidence/`，然后从第 5 步重跑。
 
 现象：找不到能操作这个使用面的工具。

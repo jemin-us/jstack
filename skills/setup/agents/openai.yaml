@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack setup"
+  short_description: "配置项目"
+policy:
+  allow_implicit_invocation: true

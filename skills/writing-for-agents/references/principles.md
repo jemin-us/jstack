@@ -2,8 +2,6 @@
 
 写指针、步骤或修剪时遇到拿不准的情况，读本文件。各节按流程顺序排列。
 
-本文件和 [skill-mechanics.md](skill-mechanics.md) 改写自 mattpocock/skills 的 [writing-for-agents](https://github.com/mattpocock/skills/tree/main/skills/productivity/writing-for-agents)（MIT 许可，Copyright (c) 2026 Matt Pocock），用中文重新组织，不是逐句翻译。
-
 ## 指针
 
 指针是一直留在 agent 上下文里的一句话，指向上下文之外的内容，并写明什么时候去读。skill 的 description 是指针，`CLAUDE.md` 里"改部署脚本时读 docs/deploy.md"这一行也是。
@@ -14,7 +12,7 @@ agent 会不会去读，取决于指针的措辞，而不是被指向内容的�
 
 - 最能触发的词放最前面。
 - 一条分支只写一个触发词。几个同义词描述的是同一条分支，合并成一个。
-- 正文已经写明的身份介绍，不在指针里重复。
+- skill 的 description 用一句话写它做什么，不展开正文里的介绍。
 
 ## 两种负担
 
