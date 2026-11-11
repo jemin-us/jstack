@@ -66,6 +66,8 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 | 情况 | skill |
 |---|---|
 | 生成或更新项目的验证 skill | [create-verify-app](../create-verify-app/SKILL.md) |
+| 固定项目的代码基准，把规则落成检查 | [codebase](../codebase/SKILL.md) |
+| 审计一块代码的结构问题，只看不改 | [codebase-audit](../codebase-audit/SKILL.md) |
 | 写或审查 `CLAUDE.md`、`AGENTS.md`、prompt 等给 agent 读的文字 | [writing-for-agents](../writing-for-agents/SKILL.md) |
 | 新建、修改或审查 skill | [skill-creator-plus](../skill-creator-plus/SKILL.md) |
 
