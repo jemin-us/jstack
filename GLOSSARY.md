@@ -24,6 +24,14 @@ _Avoid_: agent 定义、custom agent
 写在 ticket 里的一条可运行、能判定通过或失败的检查，格式为"命令或操作 → 期望结果"，由 to-tickets 生成。
 _Avoid_: 验收谓词、验收标准、DoD、checklist
 
+**形状规则**:
+项目对代码结构的一条约束，例如依赖方向、分层、命名、文件位置，由 codebase 落成检查。
+_Avoid_: 架构规范、编码规范、最佳实践
+
+**基线**:
+立检查时已经存在的违规清单，检查只拦清单之外的违规，清单只减不增。
+_Avoid_: 白名单、豁免清单、技术债列表
+
 **结论**:
 accept 对一次验收给出的判定，只有 PASS、PASS+NOTES、FAIL 三种。
 _Avoid_: verdict、验收结果

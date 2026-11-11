@@ -30,6 +30,8 @@ Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
 | `accept` | 非作者 agent 独立验收 |
 | `pr` | push 已 commit 的分支并开 PR |
 | `create-verify-app` | 为项目生成 verify-app 类 skill |
+| `codebase` | 把项目的形状规则落成会失败的检查，接进 CI，已有违规冻结成基线 |
+| `codebase-audit` | 只读审计一块代码的结构问题，输出按修法组织的清单，每个修法标明能否配检查 |
 | `setup` | 检查 gh 环境、账号和默认仓库，生成项目的验证 skill |
 | `help` | 说明该用哪个 skill、怎么调用 |
 | `skill-creator-plus` | 新建、修改和审查 skill |
