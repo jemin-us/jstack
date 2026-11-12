@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack codebase-audit"
+  short_description: "只读审计代码结构，输出按修法组织、标明能否配检查的清单"
+policy:
+  allow_implicit_invocation: true

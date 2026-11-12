@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 校验插件结构
-        run: python3 scripts/validate.py
+      - name: 校验插件结构和生成文件
+        run: make test
       - name: 检查版本号递增
         run: python3 scripts/check_version.py "origin/${{ github.base_ref }}" HEAD
