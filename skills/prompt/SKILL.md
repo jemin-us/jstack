@@ -1,5 +1,5 @@
 ---
-name: writing-for-agents
+name: prompt
 description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief 时使用，也用于 SKILL.md 正文和 description、spec 和 ticket 模板等其他给 agent 读的文字。区分步骤和参考，写指针和完成标准，逐句修剪。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
 ---
 

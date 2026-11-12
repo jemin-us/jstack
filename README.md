@@ -28,8 +28,8 @@ codex plugin add jstack@jstack
 |---|---|
 | `mode` | 入口，选 playbook 并按步骤调用其他 skill |
 | `brainstorm` | 需求追问 |
-| `to-spec` | 生成 spec 并发布为 GitHub issue |
-| `to-tickets` | 拆成可独立执行的 ticket |
+| `spec` | 生成 spec 并发布为 GitHub issue |
+| `tickets` | 拆成可独立执行的 ticket |
 | `implement` | 测试先行地实现并 commit |
 | `diagnosing-bugs` | 复现、定位并修复 bug |
 | `accept` | 非作者 agent 独立验收 |
@@ -40,7 +40,7 @@ codex plugin add jstack@jstack
 | `setup` | 检查 gh 环境、账号和默认仓库，生成项目的验证 skill |
 | `help` | 说明该用哪个 skill、怎么调用 |
 | `skill-creator-plus` | 新建、修改和审查 skill |
-| `writing-for-agents` | 编写和审查给 agent 读的文字 |
+| `prompt` | 编写和审查给 agent 读的文字 |
 | `worktree` | 新建和清理项目内的 git worktree，把多个分支合并到集成 worktree，供其他 skill 读取 |
 | `harness` | 通用说法在 Claude Code 和 Codex 中的对应操作，供其他 skill 读取 |
 | `finish` | implement、diagnosing-bugs 单独使用时的验收、清理和开 PR，供其他 skill 读取 |

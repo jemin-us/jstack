@@ -6,9 +6,9 @@
 
 1. **追问需求**：读取 [brainstorm](../../../brainstorm/SKILL.md) 并照做。
    完成标准：每个决定要么用户已回答，要么按推荐答案记为假设。
-2. **写 spec**：读取 [to-spec](../../../to-spec/SKILL.md) 并照做。
+2. **写 spec**：读取 [spec](../../../spec/SKILL.md) 并照做。
    完成标准：spec issue 已发布，记下编号。之后按 mode 第 2 步新建集成 worktree 和集成分支 `jstack/spec-<编号>`。
-3. **拆 ticket**：读取 [to-tickets](../../../to-tickets/SKILL.md) 并照做。
+3. **拆 ticket**：读取 [tickets](../../../tickets/SKILL.md) 并照做。
    完成标准：ticket 已发布，并带有子 issue 关系和阻塞关系。
 4. **按波次实现和验收**：重复以下过程，直到没有可以开工的 ticket。
    1. **算出本波**：阻塞项都已合并到集成分支的 open ticket，构成本波；因受阻而保持 open、但已经合并的 ticket，算作已完成。一波最多 3 张，多出的留到下一波。阻塞项用 [issue-state.md](../issue-state.md) 里的命令查。

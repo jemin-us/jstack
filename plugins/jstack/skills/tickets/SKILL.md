@@ -1,6 +1,6 @@
 ---
-name: to-tickets
-description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 to-spec；泛化的新功能请求使用 mode。"
+name: tickets
+description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 `spec`；泛化的新功能请求使用 mode。"
 ---
 
 # 拆 ticket
@@ -24,7 +24,7 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 再浏览 spec 涉及的代码，弄清现有结构、入口文件和相关测试。
 
-完成标准：能说出 spec 的每条行为由哪部分代码承载；spec 的“待定”一节为空。待定不为空时停止，提示用户先回到 to-spec 补全。
+完成标准：能说出 spec 的每条行为由哪部分代码承载；spec 的“待定”一节为空。待定不为空时停止，提示用户先回到 `spec` 补全。
 
 ### 3. 起草切分方案
 
@@ -56,7 +56,7 @@ description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆
 
 ### 5. 写 ticket 正文
 
-按 [references/ticket-template.md](references/ticket-template.md) 为每张 ticket 写正文，写法按 [writing-for-agents](../writing-for-agents/SKILL.md)。写完逐张自查：
+按 [references/ticket-template.md](references/ticket-template.md) 为每张 ticket 写正文，写法按 [prompt](../prompt/SKILL.md)。写完逐张自查：
 
 - 只读这张 ticket，不看对话和其他 ticket，能否开工？
 - 验收检查能直接运行吗？是否优先写了“改动前失败、改动后通过”的检查？

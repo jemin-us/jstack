@@ -17,6 +17,6 @@ mode 派 subagent 实现一张 ticket 时，填好下面的内容，整段作为
 <仅重试时附上：上一次 accept 的失败详情，或合并冲突的文件列表；合并冲突时要求先 rebase 到集成分支 <集成分支名> 最新的 commit 再解决冲突>
 ```
 
-重试时附加的失败详情等补充内容，写法按 [writing-for-agents](../../writing-for-agents/SKILL.md)。
+重试时附加的失败详情等补充内容，写法按 [prompt](../../prompt/SKILL.md)。
 
 `<jstack 插件目录>` 填 mode 开始时按 harness 确定的绝对路径。

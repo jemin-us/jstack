@@ -60,7 +60,7 @@ description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，�
 
 ### 4. 编写正文
 
-按 [references/patterns.md](references/patterns.md) 的模板搭出章节，句子的写法读取 [writing-for-agents](../writing-for-agents/SKILL.md) 并照做。skill 另有五条结构规则：
+按 [references/patterns.md](references/patterns.md) 的模板搭出章节，句子的写法读取 [prompt](../prompt/SKILL.md) 并照做。skill 另有五条结构规则：
 
 - 一个约束只写一处，写在执行它的那一步。"硬性规则"只放不属于任何单一步骤的约束。
 - 每步以完成标准结尾。完成标准写做完后的状态，不把步骤里的指令再说一遍。
@@ -86,7 +86,7 @@ description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，�
 ## 审查和改进流程
 
 1. 按 [references/checklist.md](references/checklist.md) 逐项检查。
-2. 读取 [writing-for-agents](../writing-for-agents/SKILL.md)，按它的审查任务逐句检查。
+2. 读取 [prompt](../prompt/SKILL.md)，按它的审查任务逐句检查。
 3. skill 不触发、误触发或触发后不按指令执行时，按 [references/testing-and-troubleshooting.md](references/testing-and-troubleshooting.md) 的"排错"表定位。
 4. 按"条目、所在行、问题、改法"列出问题，用户确认后再修改。
 5. 修改后按仓库约定升级版本号。
