@@ -1,10 +1,10 @@
 # jstack 仓库指南
 
-Claude Code 和 Codex 共用这份指南。`CLAUDE.md` 只导入本文件，不另写内容。
+Claude Code 和 Codex 共用这份指南，两端都直接读取 `AGENTS.md`，不另建 `CLAUDE.md`。
 
 ## 项目
 
-jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` 下的同一份源码。skill 列表和职责见 `README.md`，术语见 `GLOSSARY.md`。
+jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` 下的同一份源码。skill 列表和职责见 `README.md`。
 
 ## 仓库结构
 
