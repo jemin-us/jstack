@@ -1,11 +1,13 @@
 ---
 name: prompt
-description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief 时使用，也用于 SKILL.md 正文和 description、spec 和 ticket 模板等其他给 agent 读的文字。区分步骤和参考，写指针和完成标准，逐句修剪。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
+description: 当用户要写、改或审查 CLAUDE.md、AGENTS.md、系统提示词、prompt、subagent 的 brief、`/goal` 条件时使用，也用于 SKILL.md 正文和 description、spec 和 ticket 模板等其他给 agent 读的文字。区分步骤和参考，写指针和完成标准，逐句修剪。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
 ---
 
 # 写给 agent 的文字
 
 目标是让 agent 每次按同一条路径执行，而不是每次产出同样的文字。skill、`CLAUDE.md`、`AGENTS.md`、brief 只是包装不同，写法相同。
+
+写的是 Claude Code 或 Codex 的 `/goal` 条件时，先读 [references/goal.md](references/goal.md)，按它的四条写，再走下面的流程。
 
 ## 流程
 
