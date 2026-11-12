@@ -1,0 +1,23 @@
+{
+  "name": "jstack",
+  "version": "1.7.0",
+  "description": "个人工程工作流：需求追问、spec、ticket、实现、独立验收。Claude Code 与 Codex 共用。",
+  "author": {
+    "name": "jemin-us",
+    "url": "https://github.com/jemin-us"
+  },
+  "homepage": "https://github.com/jemin-us/jstack",
+  "repository": "https://github.com/jemin-us/jstack",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "jstack",
+    "shortDescription": "需求追问、spec、ticket、实现、独立验收",
+    "developerName": "jemin-us",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/jemin-us/jstack"
+  }
+}

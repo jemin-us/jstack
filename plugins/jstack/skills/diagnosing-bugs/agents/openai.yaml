@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack diagnosing-bugs"
+  short_description: "复现、定位并修复 bug"
+policy:
+  allow_implicit_invocation: true

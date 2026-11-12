@@ -4,14 +4,19 @@
 
 ## 安装
 
-Claude Code：
+Claude Code（更新：`claude plugin marketplace update jstack && claude plugin update jstack@jstack`）：
 
 ```bash
 claude plugin marketplace add jemin-us/jstack
 claude plugin install jstack@jstack
 ```
 
-Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
+Codex（更新：`codex plugin marketplace upgrade jstack && codex plugin add jstack@jstack`）：
+
+```bash
+codex plugin marketplace add jemin-us/jstack
+codex plugin add jstack@jstack
+```
 
 ## Skills
 
@@ -43,9 +48,8 @@ Codex 通过仓库中的 `.claude-plugin/marketplace.json` 识别本插件。
 ## 开发
 
 ```bash
-python3 scripts/validate.py
+make test        # 校验 skill 结构和生成文件
+make regenerate  # 改了 VERSION 或 skills/ 后重新生成两端的清单和 Codex 镜像
 ```
 
-skill 之间只能引用对方的 `SKILL.md`，不能引用对方的 `references/`、`scripts/` 等内部文件；多个 skill 共用的内容抽成单独的 skill。`scripts/validate.py` 会检查这一条。
-
-术语见 `GLOSSARY.md`。
+版本号只改 `VERSION`。`.claude-plugin/`、`.agents/`、`plugins/jstack/` 都是生成的，不要手改。仓库结构、开发和发布规则见 `AGENTS.md`，术语见 `GLOSSARY.md`。
