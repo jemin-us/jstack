@@ -52,4 +52,4 @@ make test        # 校验 skill 结构和生成文件
 make regenerate  # 改了 VERSION 或 skills/ 后重新生成两端的清单和 Codex 镜像
 ```
 
-版本号只改 `VERSION`。`.claude-plugin/`、`.agents/`、`plugins/jstack/` 都是生成的，不要手改。仓库结构、开发和发布规则见 `AGENTS.md`，术语见 `GLOSSARY.md`。
+版本号只改 `VERSION`。`.claude-plugin/`、`.agents/`、`plugins/jstack/` 都是生成的，不要手改。仓库结构、开发和发布规则见 `AGENTS.md`。
