@@ -87,5 +87,5 @@ mode 传入 ticket #42 和范围 `a1b2c3..d4e5f6`。读出两条验收检查，�
 处理：有 `verify-<app>` 就按它的启动步骤运行；没有就把该条标为"受阻"，并在结论里建议运行 jstack skill create-verify-app。
 
 现象：找不到 ticket 里的 `## 验收检查` 一节。
-原因：ticket 不是 to-tickets 生成的，或者被手动改过。
+原因：ticket 不是 `tickets` 生成的，或者被手动改过。
 处理：向用户要验收检查，不要从 ticket 正文里猜。

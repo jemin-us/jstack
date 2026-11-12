@@ -1,6 +1,6 @@
 ---
 name: mode
-description: 当用户提出泛化的开发请求时使用，例如“加个功能”“给订单列表加按状态筛选”“改一下这个行为”“修这个 bug”。按 jstack 工作流判断规模和类型：需要 spec 或要拆成多张 ticket 的功能走 feature playbook，bug 走 bug-fix playbook，一个 ticket 就能做完的小改动（例如“给脚本加个参数”）交给 implement，依次执行其他 jstack skill 完整推进。请求已指明 ticket 编号、spec 编号或待验收的分支时，使用对应的 implement、to-tickets、accept。
+description: 当用户提出泛化的开发请求时使用，例如“加个功能”“给订单列表加按状态筛选”“改一下这个行为”“修这个 bug”。按 jstack 工作流判断规模和类型：需要 spec 或要拆成多张 ticket 的功能走 feature playbook，bug 走 bug-fix playbook，一个 ticket 就能做完的小改动（例如“给脚本加个参数”）交给 implement，依次执行其他 jstack skill 完整推进。请求已指明 ticket 编号、spec 编号或待验收的分支时，使用对应的 implement、`tickets`、accept。
 ---
 
 # jstack 入口
@@ -30,7 +30,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 ### 2. 准备分支
 
-只有 feature 执行本步，并且放到 to-spec 发布之后，因为分支名要用 spec 编号：按 [worktree](../worktree/SKILL.md) 的"集成 worktree"一节新建集成 worktree 和集成分支 `jstack/spec-<spec 编号>`，各 ticket 的改动最后都合并到这里。
+只有 feature 执行本步，并且放到 `spec` 发布之后，因为分支名要用 spec 编号：按 [worktree](../worktree/SKILL.md) 的"集成 worktree"一节新建集成 worktree 和集成分支 `jstack/spec-<spec 编号>`，各 ticket 的改动最后都合并到这里。
 
 完成标准：feature 的集成 worktree 已建好，绝对路径已记下；bug-fix 和 change 已标为跳过。
 
@@ -66,7 +66,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 用户说："/jstack:mode 给订单列表加按状态筛选"
 
-执行：选择 feature；brainstorm 只问一个问题"筛选条件要不要保留在 URL 里"，其余决定按推荐答案记为假设；用 to-spec 发布 spec #12，在集成 worktree 里新建分支 `jstack/spec-12`；用 to-tickets 拆出互不阻塞的 #13、#14；两张在各自的 worktree 里并行实现；#13 验收 PASS 后合并；#14 第一次 accept 判 FAIL，带上失败输出重新派一次 subagent，第二次判 PASS 后合并；集成分支全量测试通过。
+执行：选择 feature；brainstorm 只问一个问题"筛选条件要不要保留在 URL 里"，其余决定按推荐答案记为假设；用 `spec` 发布 spec #12，在集成 worktree 里新建分支 `jstack/spec-12`；用 `tickets` 拆出互不阻塞的 #13、#14；两张在各自的 worktree 里并行实现；#13 验收 PASS 后合并；#14 第一次 accept 判 FAIL，带上失败输出重新派一次 subagent，第二次判 PASS 后合并；集成分支全量测试通过。
 
 结果：#13、#14 评论了验收结论并关闭，#12 随之关闭；按三段式汇报，列出记为假设的决定；开出 `jstack/spec-12` 到默认分支的 PR，删除集成 worktree。
 

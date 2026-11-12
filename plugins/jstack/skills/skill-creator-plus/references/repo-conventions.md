@@ -34,5 +34,5 @@
 | 跨 skill 引用 | 只链接其他 skill 的 `SKILL.md`，不链接它的 `references/`、`scripts/`；两个以上 skill 共用的内容抽成单独的 skill |
 | Codex 配置 | 每个 skill 都带 `agents/openai.yaml`，填写 `display_name`、`short_description` 和 `policy.allow_implicit_invocation` |
 | 校验 | 在仓库根目录运行 `python3 scripts/validate.py`，结果为“通过” |
-| 版本号 | 改动 `skills/` 时，递增 `.claude-plugin/plugin.json` 的 `version`；skill 自身不写 `metadata.version` |
+| 版本号 | 改动 `skills/` 时，递增根目录 `VERSION`，再运行 `make regenerate`；skill 自身不写 `metadata.version` |
 | 登记 | 新 skill 登记到根目录 `README.md` 的 skill 表和 `help` 的"地图" |

@@ -78,7 +78,7 @@ gh api repos/$(gh repo view --json nameWithOwner --jq .nameWithOwner) --jq .perm
 
 执行：运行脚本，结果是 `gh_permission=insufficient READ`；`gh auth status` 显示另一个已登录账号 `jemin-us` 正是仓库 owner，运行 `gh auth switch -u jemin-us`；重新运行脚本，`result=ok`；项目里没有 verify skill，按 create-verify-app 生成 `verify-shop4-web` 并跑通。
 
-结果：活跃账号切换为 `jemin-us`，项目可以使用 to-spec 和 to-tickets，accept 验收时有 `verify-shop4-web` 可读。
+结果：活跃账号切换为 `jemin-us`，项目可以使用 `spec` 和 `tickets`，accept 验收时有 `verify-shop4-web` 可读。
 
 ## 常见问题
 

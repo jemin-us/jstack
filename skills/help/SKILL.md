@@ -45,7 +45,7 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 
 | 请求 | 过程 |
 |---|---|
-| 需要 spec 或要拆成多张 ticket 的功能 | brainstorm → to-spec → to-tickets → 并行 implement → 逐张 accept → 合并到集成分支 → pr |
+| 需要 spec 或要拆成多张 ticket 的功能 | brainstorm → `spec` → `tickets` → 并行 implement → 逐张 accept → 合并到集成分支 → pr |
 | 一张 ticket 就能做完的改动 | implement → accept → pr |
 | bug | diagnosing-bugs → accept → pr |
 
@@ -54,8 +54,8 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 | 情况 | skill |
 |---|---|
 | 想法还模糊，只想先讨论清楚 | [brainstorm](../brainstorm/SKILL.md) |
-| 已讨论清楚，只要一份 spec | [to-spec](../to-spec/SKILL.md) |
-| 已有 spec，只要拆成 ticket | [to-tickets](../to-tickets/SKILL.md) |
+| 已讨论清楚，只要一份 spec | [spec](../spec/SKILL.md) |
+| 已有 spec，只要拆成 ticket | [tickets](../tickets/SKILL.md) |
 | 已有 ticket，或改动已经明确，只要实现 | [implement](../implement/SKILL.md) |
 | 只要复现 bug、定位根因 | [diagnosing-bugs](../diagnosing-bugs/SKILL.md) |
 | 已有分支或 commit，只要独立验收 | [accept](../accept/SKILL.md) |
@@ -68,7 +68,7 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 | 生成或更新项目的验证 skill | [create-verify-app](../create-verify-app/SKILL.md) |
 | 固定项目的代码基准，把规则落成检查 | [codebase](../codebase/SKILL.md) |
 | 审计一块代码的结构问题，只看不改 | [codebase-audit](../codebase-audit/SKILL.md) |
-| 写或审查 `CLAUDE.md`、`AGENTS.md`、prompt 等给 agent 读的文字 | [writing-for-agents](../writing-for-agents/SKILL.md) |
+| 写或审查 `CLAUDE.md`、`AGENTS.md`、prompt 等给 agent 读的文字 | [prompt](../prompt/SKILL.md) |
 | 新建、修改或审查 skill | [skill-creator-plus](../skill-creator-plus/SKILL.md) |
 
 ### 不由用户调用

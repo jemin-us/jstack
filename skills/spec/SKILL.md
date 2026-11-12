@@ -1,6 +1,6 @@
 ---
-name: to-spec
-description: 当用户要求把已讨论清楚的需求或讨论结果写成 spec、发布 spec issue 时使用，例如“把讨论结果写成 spec”。按模板整理成 spec 并发布为 GitHub issue。需求还不清楚时使用 brainstorm；泛化的新功能请求使用 mode；拆 ticket 使用 to-tickets。
+name: spec
+description: 当用户要求把已讨论清楚的需求或讨论结果写成 spec、发布 spec issue 时使用，例如“把讨论结果写成 spec”。按模板整理成 spec 并发布为 GitHub issue。需求还不清楚时使用 brainstorm；泛化的新功能请求使用 mode；拆 ticket 使用 `tickets`。
 ---
 
 # 生成 spec
@@ -32,7 +32,7 @@ description: 当用户要求把已讨论清楚的需求或讨论结果写成 spe
 
 ### 4. 生成 spec
 
-读取 [references/spec-template.md](references/spec-template.md)，按模板生成中文标题和正文，写法按 [writing-for-agents](../writing-for-agents/SKILL.md)。
+读取 [references/spec-template.md](references/spec-template.md)，按模板生成中文标题和正文，写法按 [prompt](../prompt/SKILL.md)。
 
 完成标准：每个章节都有内容；行为每条都能被验证；"待定"写的是"无"。
 
@@ -61,7 +61,7 @@ gh issue create --repo <仓库> --title "<中文标题>" --body-file "$f"
 
 ### 7. 收尾
 
-向用户报告每份 spec 的 issue 链接，提示下一步使用 jstack skill `to-tickets` 拆成 ticket。
+向用户报告每份 spec 的 issue 链接，提示下一步使用 jstack skill `tickets` 拆成 ticket。
 
 ## 示例
 
@@ -75,7 +75,7 @@ gh issue create --repo <仓库> --title "<中文标题>" --body-file "$f"
 5. 展示全文，用户同意；
 6. 创建 issue。
 
-结果：返回 issue 链接，并提示运行 `to-tickets`。
+结果：返回 issue 链接，并提示运行 `tickets`。
 
 ## 常见问题
 
