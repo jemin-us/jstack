@@ -1,5 +1,5 @@
 interface:
   display_name: "jstack pr"
-  short_description: "push 已 commit 的分支并开 PR"
+  short_description: "push、开 PR 并跟进 CI"
 policy:
   allow_implicit_invocation: true

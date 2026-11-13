@@ -41,13 +41,16 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 
 ### 一句话跑完
 
+开发任务默认自动提交、push、开 PR 并跟进 CI；不逐步确认。用户明确限定只读或本地修改时遵守限定。合并与发布不包含在默认流程中。
+
 把请求交给 [mode](../mode/SKILL.md)，它判断规模和类型后依次执行其他 skill：
 
 | 请求 | 过程 |
 |---|---|
 | 需要 spec 或要拆成多张 ticket 的功能 | brainstorm → `spec` → `tickets` → 并行 implement → 逐张 accept → 合并到集成分支 → pr |
 | 一张 ticket 就能做完的改动 | implement → accept → pr |
-| bug | diagnosing-bugs → accept → pr |
+| bug | diagnosing-bugs → accept → pr → CI 跟进 |
+| 清理代码、定期重构、维护基线 | 审计 → 分批重构 → 收紧基线 → accept → pr → CI 跟进 |
 
 ### 只做一步
 
@@ -86,5 +89,5 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 ## 常见问题
 
 现象：用户的事不在地图里，例如只想改一行文案。
-原因：jstack 面向一张 ticket 大小及以上的改动。
-处理：告诉用户这件事不需要 jstack，直接说出要改什么即可。
+原因：任务不需要 spec 和 ticket。
+处理：局部改动走 implement，采用与影响相称的验证，再独立审查和自动交付；只读调查和服务操作不走开发流程。

@@ -12,7 +12,7 @@ jstack 的 skill 用通用说法书写，按当前 Harness 所在的列执行。
 
 | 通用说法 | Claude Code | Codex |
 |---|---|---|
-| 读取 jstack skill `<name>` | 用 Read 读取 `<jstack 插件目录>/skills/<name>/SKILL.md` 并照做。`${CLAUDE_PLUGIN_ROOT}` 只在 skill 加载时替换，Bash 里没有这个变量，不要在命令里使用 | 读取 `<jstack 插件目录>/skills/<name>/SKILL.md` 并照做 |
+| 读取 jstack skill `<name>` | 用 Read 读取 `<jstack 插件目录>/skills/<name>/SKILL.md`；执行任务时照做，只读评估时不执行其中的写操作。`${CLAUDE_PLUGIN_ROOT}` 只在 skill 加载时替换，Bash 里没有这个变量，不要在命令里使用 | 读取 `<jstack 插件目录>/skills/<name>/SKILL.md`；执行任务时照做，只读评估时不执行其中的写操作 |
 | 提示用户调用 | `/jstack:<name>` | `$<name>`，或 `/skills` 中选择 |
 | 派 subagent 执行 brief | Agent 工具，`subagent_type: general-purpose`，brief 全文放进 prompt | 明确要求 spawn 内置 `worker` agent，brief 全文作为任务说明 |
 | 向用户提问 | AskUserQuestion | 纯文本提问并等待回复 |
