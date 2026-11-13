@@ -1,6 +1,6 @@
 ---
 name: skill-creator-plus
-description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，优化 description 或排查触发问题时使用。按用例确定结构，编写 description 和正文，运行校验脚本并做触发测试。量化评测使用 skill-creator。
+description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，优化 description 或排查触发问题时使用。按用例确定结构，编写 description 和正文，运行校验脚本并做触发测试。流程行为评测使用 evaluate。
 ---
 
 # Skill 创建与审查
@@ -75,7 +75,7 @@ description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，�
 1. 写触发测试：至少 5 条应触发的说法（包含换一种说法），至少 3 条不应触发的说法（包含相邻 skill 的典型说法）。
 2. 选一个真实且有难度的任务，同一任务跑 3 次。计划用在多个模型上时，每个模型都跑。
 
-测试的写法和命令见 [references/testing-and-troubleshooting.md](references/testing-and-troubleshooting.md)。
+测试的写法和命令见 [references/testing-and-troubleshooting.md](references/testing-and-troubleshooting.md)。修改 jstack 工作流时读取 [evaluate](../evaluate/SKILL.md)，用隔离任务验证实际行为；结构校验不能代替行为评测。
 
 完成标准：校验脚本没有"错误"；触发测试的每条说法都有结果；3 次运行的输出结构一致。没做的测试在交付时标"未验证"。
 

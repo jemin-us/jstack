@@ -15,10 +15,10 @@
    2. **定基准和分支**：每张 ticket 的基准是集成分支 `jstack/spec-<spec 编号>`，新分支名是 `jstack/spec-<spec 编号>-t<编号>`。mode 不自己建 worktree，由 implement 按 [worktree](../../../worktree/SKILL.md) 建好后回报路径、分支和起点。把 ticket 指派给当前账号。
    3. **并行实现**：按 mode 第 3 步给出的 implement-brief.md 为每张 ticket 填好 brief，然后同时派出 subagent。
    4. **逐张验收**：每个 subagent 返回后，记下它回报的 worktree 路径、分支和起点 commit。在这个 worktree 里（每条命令都以 `cd <worktree 绝对路径> &&` 开头）读取 [accept](../../../accept/SKILL.md) 并照做，验收范围是"起点..ticket 分支 HEAD"。subagent 汇报验收检查没通过、没有 commit 的，跳过验收，直接按第 6 小步重试。
-   5. **合并**：PASS 或 PASS+NOTES 的 ticket，在集成 worktree 里运行 `git merge --no-ff <ticket 分支>`（命令以 `cd <集成 worktree 绝对路径> &&` 开头）。有冲突时先 `git merge --abort`，再按第 6 小步重试，brief 末尾附上冲突的文件。合并成功后，按 [issue-state.md](../issue-state.md) 评论结论并保持 ticket open，待集成分支 PR 的当前 HEAD 必过 CI 通过后再关闭，然后按 [worktree](../../../worktree/SKILL.md) 的"清理"一节删除 worktree 和 ticket 分支。
+   5. **合并**：PASS 或 PASS+NOTES 的 ticket，在集成 worktree 里运行 `git merge --no-ff <ticket 分支>`（命令以 `cd <集成 worktree 绝对路径> &&` 开头）。有冲突时先 `git merge --abort`，再按第 6 小步重试，brief 末尾附上冲突的文件。合并成功后，按 [issue-state.md](../issue-state.md) 评论结论并保持 ticket open，待集成分支 pr 核实当前 HEAD 为 READY（或已核实 MERGED）后再关闭，然后按 [worktree](../../../worktree/SKILL.md) 的"清理"一节删除 worktree 和 ticket 分支。
    6. **重试**：验收 FAIL 或合并冲突时，在原 worktree 里重新派 subagent，brief 里写明已有 worktree 的路径和起点，末尾附上失败详情，然后重新验收、合并。累计三轮审查仍失败，或环境问题无法解决而 BLOCKED（不盲目重试），就把结论评论到 ticket 上，保持 open，并保留 worktree 和分支供用户排查。依赖这张 ticket 的 ticket 不再开工，其余照常进行。
    7. **波次收尾**：本波全部处理完后，在集成 worktree 里运行一次全量测试。失败时停止整个 playbook，进入收尾。
-   完成标准：每张 ticket 都有 accept 结论，并已评论到 issue 上；集成分支的全量测试通过。只有所有 ticket 已通过验收且集成分支当前 HEAD 的 CI 通过，才关闭对应 ticket 和 spec。
+   完成标准：每张 ticket 都有 accept 结论，并已评论到 issue 上；集成分支的全量测试通过。关闭 ticket 和 spec 统一按 mode 的收尾规则执行，不在波次内提前关闭。
 5. **收尾**：按 mode 第 4 步汇报，另外列出因上游失败而没有开工的 ticket，以及保留下来的 worktree 路径和 worktree skill "清理"一节的删除命令。push、开 PR 和删除集成 worktree 按 mode 第 4 步执行。
 
 ## 注意

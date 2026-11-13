@@ -1,7 +1,7 @@
-.PHONY: test validate verify-generated regenerate
+.PHONY: test validate verify-generated regenerate test-tools
 
 # CI 跑的就是这个目标
-test: validate verify-generated
+test: validate verify-generated test-tools
 
 validate:
 	python3 scripts/validate.py
@@ -13,3 +13,7 @@ verify-generated:
 # 改了 VERSION 或 skills/ 后运行，生成结果和源文件一起提交
 regenerate:
 	python3 scripts/build_metadata.py
+
+# 确定性脚本测试，不调用模型或真实远端
+test-tools:
+	python3 -m unittest discover -s tests -v

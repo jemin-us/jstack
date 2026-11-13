@@ -12,7 +12,7 @@
    完成标准：拿到 accept 结论。
 4. **处理 FAIL**：结论为 FAIL 时，带着失败详情回到 diagnosing-bugs 的修复步骤，再修一次，然后重新验收。累计最多三轮审查，第三轮仍为 FAIL 就停止；BLOCKED 时先解决可处理的环境条件，仍受阻则保留现场，不盲目重试。
    完成标准：结论为 PASS 或 PASS+NOTES，或者已按上面的条件停止。
-5. **更新 issue**：bug 来自某个 issue 时，把 accept 结论评论到这个 issue 上；当前只评论验收状态并保持 open；PR 的当前 HEAD 必过 CI 通过后，PASS 或 PASS+NOTES 才关闭。没有对应 issue 时跳过。
+5. **更新 issue**：bug 来自某个 issue 时，把 accept 结论评论到这个 issue 上；当前只评论验收状态并保持 open；pr 核实当前 HEAD 为 READY（或已核实 MERGED）后，PASS 或 PASS+NOTES 才关闭。没有对应 issue 时跳过。
 6. **保留现场**：进入 mode 收尾以完成 PR 和 CI 跟进；此前不删除 worktree。FAIL 或 BLOCKED 不进入正常交付。
    完成标准：工作区可供 CI 修复继续使用，阻塞状态已记录。
 7. **收尾**：按 mode 第 4 步汇报，附上修复前失败、修复后通过的两段输出，告诉用户保留的分支名；worktree 被保留时，列出路径和 worktree skill "清理"一节的删除命令。

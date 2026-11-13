@@ -1,0 +1,5 @@
+interface:
+  display_name: "技能行为评测"
+  short_description: "对 jstack 的流程改动运行隔离任务，检查真实产物、工具记录和交付边界"
+policy:
+  allow_implicit_invocation: false

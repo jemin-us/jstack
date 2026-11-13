@@ -19,6 +19,8 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 ### 1. 选 playbook
 
+用户要求暂停、恢复或交接时先读取 [session](../session/SKILL.md)，不重启整个开发流程。跨模块契约和领域建模由 implement 调用 [architect](../architect/SKILL.md)。用户要求技能行为评测时读取 [evaluate](../evaluate/SKILL.md)。
+
 根据用户请求，从下表中选一个：
 
 | playbook | 适用 | 执行方式 |
@@ -27,8 +29,10 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 | change | 一个 ticket 就能做完、不需要 spec 的改动 | 读取 [implement](../implement/SKILL.md) 并照做，不创建 issue |
 | bug-fix | 现有行为出错、报错、性能退化 | [bug-fix.md](references/playbooks/bug-fix.md) |
 | maintenance | 清理冗余、定期重构、减少代码基线中的已有违规 | [maintenance.md](references/playbooks/maintenance.md) |
+| perf | 有测量依据的性能退化或明确性能目标 | [perf.md](references/playbooks/perf.md) |
+| visual | 按设计或参照修复视觉与交互差异 | [visual.md](references/playbooks/visual.md) |
 
-完成标准：向用户说明选了哪个 playbook，并给出一句理由。选 change 时，向用户说明这次交给 implement，最终汇报里也写明由 implement 完成；implement 自己建 worktree、实现，再由 finish 执行 accept、修复闭环、PR 和清理，读取它的 `SKILL.md` 并照做后不再执行下面的步骤。maintenance 按对应 playbook 完成后结束，不重复执行通用收尾。只读调查和服务操作不进入开发交付流程；选用适合的只读技能或直接操作并验证，不为这些任务创建开发 PR。
+完成标准：向用户说明选了哪个 playbook，并给出一句理由。选 change 时，向用户说明这次交给 implement，最终汇报里也写明由 implement 完成；implement 自己建 worktree、实现，再由 finish 执行 accept、修复闭环、PR 和清理，读取它的 `SKILL.md` 并照做后不再执行下面的步骤。maintenance、perf、visual 按对应 playbook 完成后结束，不重复执行通用收尾。只读调查和服务操作不进入开发交付流程；选用适合的只读技能或直接操作并验证，不为这些任务创建开发 PR。
 
 ### 2. 准备分支
 
@@ -60,7 +64,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 - 跳过的步骤和原因
 ```
 
-仅当交付范围内的必需检查和独立审查通过时，汇报后读取 [pr](../pr/SKILL.md) 并照做，分支在 feature 下是集成分支，在 bug-fix 下是修复分支，正文用上面的三段汇报。CI 修复继续使用原 worktree，累计审查轮数不重置。仅当当前 HEAD 的必过 CI 通过，才关闭已完成的 issue，并按 [worktree](../worktree/SKILL.md) 清理对应的集成或修复 worktree、保留分支；失败或受阻时保留。
+仅当交付范围内的必需检查和独立审查通过时，汇报后读取 [pr](../pr/SKILL.md) 并照做，分支在 feature 下是集成分支，在 bug-fix 下是修复分支，正文用上面的三段汇报。CI 修复继续使用原 worktree，累计审查轮数不重置。仅当 pr 核实当前 HEAD 为 READY（或已核实 MERGED），才关闭已完成的 issue，并按 [worktree](../worktree/SKILL.md) 清理对应的集成或修复 worktree、保留分支；失败或受阻时保留。
 
 完成标准：PR 和对应 HEAD 的 CI 结果已告诉用户；失败、受阻或明确限定范围时保留现场并说明未交付项，不以创建 PR 代替 CI 通过。feature 仅在交付成功后清理集成 worktree。
 
@@ -70,7 +74,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 执行：选择 feature；brainstorm 只问一个问题"筛选条件要不要保留在 URL 里"，其余决定按推荐答案记为假设；用 `spec` 发布 spec #12，在集成 worktree 里新建分支 `jstack/spec-12`；用 `tickets` 拆出互不阻塞的 #13、#14；两张在各自的 worktree 里并行实现；#13 验收 PASS 后合并；#14 第一次 accept 判 FAIL，带上失败输出重新派一次 subagent，第二次判 PASS 后合并；集成分支全量测试通过。
 
-结果：#13、#14 评论验收结论；开出集成分支 PR，核实当前 HEAD 的 CI 通过后关闭 #13、#14 和 #12，清理集成 worktree；汇报 PR、验证结果和所作假设。
+结果：#13、#14 评论验收结论；开出集成分支 PR，核实 pr 对当前 HEAD 返回 READY 后关闭 #13、#14 和 #12，清理集成 worktree；汇报 PR、验证结果和所作假设。
 
 ## 常见问题
 
