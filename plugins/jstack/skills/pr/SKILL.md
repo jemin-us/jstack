@@ -22,13 +22,11 @@ description: 当用户要求 push 分支并开 PR、发 PR、提 pull request �
 
 完成标准：`<分支>` 不是 `<默认分支>`，且上面的命令至少列出一个 commit。`<分支>` 就是默认分支，或者没有 commit 时，停下告诉用户原因。
 
-### 2. 询问
+### 2. 核对交付范围
 
-自动执行时，或用户直接要求 push 或开 PR 时，跳过本步。
+开发流程进入本 skill 时默认自动 push 并开 PR，不逐步询问。用户明确限定仅本地修改或禁止外发时，到该范围结束并保留成果。合并、发布不属于本 skill。
 
-其余情况，即不是自动执行、由 finish 读取本 skill 时：问用户一次"要 push `<分支>` 并开 PR 吗？"。用户不同意时，告诉用户分支名并结束。
-
-完成标准：用户已同意，或本步已跳过。
+完成标准：分支和交付终点与用户要求一致。
 
 ### 3. 检查账号并 push
 
@@ -39,9 +37,9 @@ description: 当用户要求 push 分支并开 PR、发 PR、提 pull request �
 
 ### 4. 开 PR
 
-1. 运行 `gh pr list --head <分支> --json url --jq '.[].url'`。有输出说明 PR 已存在，把链接告诉用户，跳到第 5 步。
+1. 运行 `gh pr list --head <分支> --json url --jq '.[].url'`。有输出说明 PR 已存在，核实目标分支，更新其标题和正文以反映当前改动，不创建重复 PR。
 2. 准备标题和正文：调用方给了收尾汇报时，正文用它；用户直接要求时，根据 `git log <默认分支>..<分支>` 写"改了什么、验证了什么、还有什么"三段，没跑过的检查标"未验证"。标题用一句话概括这些 commit。
-3. 正文写进 `f=$(mktemp)`，运行：
+3. 新 PR 用下面的创建命令；已有 PR 用 `gh pr edit` 更新，正文均使用文件参数。正文包含改动、验证和回滚方式，不把聊天过程写进去。正文写进 `f=$(mktemp)`，运行：
 
    ```bash
    gh pr create --base <默认分支> --head <分支> --title "<标题>" --body-file "$f"
@@ -49,15 +47,23 @@ description: 当用户要求 push 分支并开 PR、发 PR、提 pull request �
 
 完成标准：拿到 PR 链接。
 
-### 5. 汇报
+### 5. 跟进 CI
 
-告诉用户 PR 链接、分支名，以及合并由用户决定。
+记录 `git rev-parse <分支>`，用 `gh pr view <编号> --json headRefOid,statusCheckRollup,mergeStateStatus` 和 `gh pr checks <编号>` 检查对应 HEAD。等待期间持续报告有意义的进展；每次等待不超过 60 秒。失败时读取失败 job 日志，区分本次缺陷、既有失败和基础设施阻塞。
+
+本次缺陷由作者修复，相关检查通过后提交，由 [accept](../accept/SKILL.md) 复查新 commit diff 和受影响回归，通过后 push 并检查新 HEAD；同一交付累计最多三轮独立审查。禁止跳过检查、放宽断言或反复重跑掩盖根因。无可执行修复或达到上限时保留工作区并报告。
+
+完成标准：已核实当前 HEAD 的必过检查通过，或明确记录失败、受阻、等待、跳过、没有配置检查；后五者均不宣称 CI 全绿。不自动合并。
+
+### 6. 汇报
+
+告诉用户 PR 链接、分支、HEAD、CI 结果和剩余问题；合并由用户决定。
 
 ## 示例
 
-mode 完成 feature 后读取本 skill：分支是集成分支 `jstack/spec-12`，`git log main..jstack/spec-12` 列出 6 个 commit；自动执行，跳过询问；账号检查通过；push 后没有已有 PR，用 mode 的三段汇报作正文创建 PR。
+mode 完成 feature 后读取本 skill：分支是集成分支 `jstack/spec-12`，`git log main..jstack/spec-12` 列出 6 个 commit；默认连续交付；账号检查通过；push 后没有已有 PR，用 mode 的三段汇报作正文创建 PR。
 
-结果：返回 PR 链接，提醒合并由用户决定。
+结果：返回 PR 链接和当前 HEAD 的 CI 结果，合并由用户决定。
 
 用户说"把当前分支提个 PR"：分支是 `jstack/fix-csv-last-row`，检查账号、push，按 `git log` 写三段正文后创建 PR。
 

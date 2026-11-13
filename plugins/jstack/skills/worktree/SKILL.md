@@ -28,6 +28,8 @@ disable-model-invocation: true
 
 以下命令都以 `cd <主目录> &&` 开头。
 
+0. 检查 `git status --short`、当前分支、worktree 和已有 PR，记录暂存、未暂存及未跟踪内容。涉及多人协作或远程进展时 fetch 并比较基准与远程差异，不自动 pull。任务依赖未提交内容时先确定如何保留并带入所需基线；不能只建一个缺少依赖的 worktree 然后继续。无法安全确定基线时说明阻塞，不覆盖、stash 或丢弃已有修改。
+
 1. 清理失效的 worktree 记录，并列出遗留的 jstack worktree：
 
    ```bash
@@ -49,7 +51,7 @@ disable-model-invocation: true
    git worktree add <worktree 目录>/<名称> -b <新分支> <基准>
    ```
 
-4. 之后每条命令都以 `cd <主目录>/<worktree 目录>/<名称> &&` 开头。主目录里未提交的改动不会出现在 worktree 中；任务依赖这些改动时，在汇报里写明。
+4. 之后每条命令都以 `cd <主目录>/<worktree 目录>/<名称> &&` 开头。主目录里未提交的改动不会自动出现在 worktree 中；确认第 0 步确定的任务基线在这里完整可用。
 
 调用方给了已有的 worktree 路径和起点时（例如重试），跳过以上步骤，直接在这个 worktree 里工作。
 
@@ -92,10 +94,10 @@ cd <主目录> && git worktree remove <worktree 目录>/<名称>
 cd <集成 worktree 绝对路径> && git branch -d <新分支>
 ```
 
-保留下来的 worktree，在收尾汇报里列出路径，以及供用户自己运行的删除命令：
+保留下来的 worktree，在收尾汇报里列出路径。只有确认成果已保存且没有未提交文件后，才可使用下列命令清理；不建议强制删除：
 
 ```bash
-git worktree remove --force <worktree 绝对路径> && git branch -D <新分支>
+git worktree remove <worktree 绝对路径>
 ```
 
 完成标准：`git worktree list` 里没有已删除的 worktree；保留下来的 worktree 和分支都已写进汇报。
