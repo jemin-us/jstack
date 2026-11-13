@@ -9,8 +9,8 @@ jstack 不用标签，issue 的状态全部用 GitHub 自带的功能表达。
 | 实现中 | open，assignee 为当前 gh 账号 |
 | 验收失败 | open，有 assignee，最新评论是 FAIL 结论 |
 | 验收受阻 | open，有 assignee，最新评论是 BLOCKED，并列出缺少的条件 |
-| 待交付验证 | open，独立验收已通过，当前 HEAD 的必过 CI 尚未通过 |
-| 完成 | closed，原因 completed，关闭前已评论 accept 结论，且对应 PR 当前 HEAD 的必过 CI 已通过 |
+| 待交付验证 | open，独立验收已通过，当前 HEAD 尚未满足 pr 的 READY 条件 |
+| 完成 | closed，原因 completed，关闭前已评论 accept 结论，且对应 PR 当前 HEAD 已达到 READY（或已核实 MERGED） |
 
 spec 和 ticket 靠父子关系区分：有父 issue 的是 ticket，挂着子 issue 的是 spec。
 
@@ -23,7 +23,7 @@ gh issue edit <编号> --add-assignee @me
 # 贴 accept 结论（正文先写进 f=$(mktemp)）
 gh issue comment <编号> --body-file "$f"
 
-# 验收 PASS 或 PASS+NOTES，且对应 PR 当前 HEAD 的必过 CI 已通过
+# 验收 PASS 或 PASS+NOTES，且对应 PR 当前 HEAD 已达到 READY（或已核实 MERGED）
 gh issue close <编号> --reason completed
 
 # spec 下的 ticket 是否全部关闭

@@ -27,7 +27,9 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 
 完成标准：记下 worktree 绝对路径、新分支名、起点 commit，之后每条命令都在 worktree 里执行。
 
-### 3. 确定接缝
+### 3. 确定设计与接缝
+
+跨模块契约、共享状态、新领域模型或旧 API 迁移，先读取 [architect](../architect/SKILL.md) 形成设计；已有设计时核实并复用，不重复生成。设计只返回本流程，不递归调用 implement。涉及持久化、跨语言协议、缓存失效或删除公开入口时，按 [references/impact.md](references/impact.md) 证明改动安全依赖的关键事实。局部改动跳过结构设计。
 
 接缝是观察行为的公开边界，测试只写在接缝上。按以下顺序确定：
 
@@ -109,7 +111,7 @@ description: "当用户指明要实现的 ticket 编号时使用，例如“实�
 
 用户说："实现 #42"
 
-执行：读取 #42，验收检查是 `curl -s localhost:3000/health` → `OK`；建 worktree `.claude/worktrees/jstack-health-check` 和分支 `jstack/health-check`；在路由层写一条健康检查测试，确认失败；实现接口，测试通过；运行验收检查得到 `OK`；全量测试通过；commit；执行 finish，独立验收 PASS 后自动开 PR，当前 HEAD 的 CI 通过后清理 worktree。
+执行：读取 #42，验收检查是 `curl -s localhost:3000/health` → `OK`；建 worktree `.claude/worktrees/jstack-health-check` 和分支 `jstack/health-check`；在路由层写一条健康检查测试，确认失败；实现接口，测试通过；运行验收检查得到 `OK`；全量测试通过；commit；执行 finish，独立验收 PASS 后自动开 PR，pr 确认 READY 后按收尾规则清理 worktree。
 
 结果：汇报 commit 哈希、验收检查的实际输出 `OK`、accept 结论 PASS、PR 和 CI 结果，告诉用户分支 `jstack/health-check` 已保留，"还有什么"写"无"。
 

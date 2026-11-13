@@ -56,13 +56,16 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 
 | 情况 | skill |
 |---|---|
+| 架构、领域模型、跨模块接口设计 | [architect](../architect/SKILL.md) |
+| 暂停、恢复或交接长任务 | [session](../session/SKILL.md) |
+| 技能流程的行为评测 | [evaluate](../evaluate/SKILL.md) |
 | 想法还模糊，只想先讨论清楚 | [brainstorm](../brainstorm/SKILL.md) |
 | 已讨论清楚，只要一份 spec | [spec](../spec/SKILL.md) |
 | 已有 spec，只要拆成 ticket | [tickets](../tickets/SKILL.md) |
 | 已有 ticket，或改动已经明确，只要实现 | [implement](../implement/SKILL.md) |
 | 只要复现 bug、定位根因 | [diagnosing-bugs](../diagnosing-bugs/SKILL.md) |
 | 已有分支或 commit，只要独立验收 | [accept](../accept/SKILL.md) |
-| 分支已 commit，只要开 PR | [pr](../pr/SKILL.md) |
+| PR 状态、review、CI、开 PR 或明确合并 | [pr](../pr/SKILL.md) |
 
 ### 不属于开发流程
 
