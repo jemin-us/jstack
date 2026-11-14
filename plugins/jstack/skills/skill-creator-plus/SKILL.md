@@ -13,7 +13,6 @@ description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，�
   python3 <本 skill 目录>/scripts/validate_skill.py <skill 目录>
   ```
 
-- 默认用简体中文书写；用户指定其他语言时按用户要求。
 - 写入已有的 skill 仓库前，按 [references/repo-conventions.md](references/repo-conventions.md) 读仓库约定并照做。
 - `references/` 没有覆盖的情况，或者用户要求对照官方规范时，读取 [assets/skill-build.pdf](assets/skill-build.pdf)。它和本 skill 不一致时以本 skill 为准：PDF 建议重复关键点、加强调标题和鼓励语，本 skill 要求一个约束只写一处。它共 33 页，按页码范围分段读取：技术要求在 10–13 页，测试在 15–17 页，常见写法和排错在 22–27 页，检查清单在 30–31 页。
 
@@ -35,7 +34,7 @@ description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，�
 
 ### 2. 确定位置和结构
 
-- 用户级 skill 放在 `$HOME/.claude/skills/<name>/`，项目级 skill 放在 `<仓库>/.claude/skills/<name>/`。
+- 用户级 skill 放在 Claude Code 的 `$HOME/.claude/skills/<name>/` 或 Codex 的 `$HOME/.agents/skills/<name>/`；项目级 skill 放在 `<仓库>/.claude/skills/<name>/` 或 `<仓库>/.agents/skills/<name>/`。
 - 子目录只建用得上的：`references/` 放部分分支才读的细节，`scripts/` 放确定性的检查或处理，`assets/` 放模板和素材。
 - 决定自动调用还是手动调用。只被用户点名、或只被其他 skill 按路径读取的 skill 设为手动调用。
 

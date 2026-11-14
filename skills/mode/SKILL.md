@@ -1,6 +1,6 @@
 ---
 name: mode
-description: 当用户提出泛化的开发请求时使用，例如“加个功能”“给订单列表加按状态筛选”“改一下这个行为”“修这个 bug”。按 jstack 工作流判断规模和类型：需要 spec 或要拆成多张 ticket 的功能走 feature playbook，bug 走 bug-fix playbook，一个 ticket 就能做完的小改动交给 implement；代码清理、定期重构和基线维护走 maintenance playbook，依次执行其他 jstack skill 完整推进。请求已指明 ticket 编号、spec 编号或待验收的分支时，使用对应的 implement、`tickets`、accept。
+description: 当用户提出泛化的开发请求时使用，例如“加个功能”“改一下这个行为”“修这个 bug”，也用于代码清理、定期重构和基线维护。判断规模和类型后依次调用其他 jstack skill，推进到 PR。请求已指明 ticket 编号、spec 编号或待验收的分支时，使用对应的 implement、`tickets`、accept。
 ---
 
 # jstack 入口
@@ -10,7 +10,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 - 先读取 [harness](../harness/SKILL.md)，整个会话只读一次。下文的"读取 skill""派 subagent""向用户提问"和 `<jstack 插件目录>` 都按它执行。
 - 开发任务默认做到实现、验证、独立审查、commit、push、PR 和 CI 跟进，不逐步请求继续。合并、发布和不可恢复的数据删除不在默认范围；明确的仅分析、仅本地或禁止提交要求优先。读取技能用于评估不代表已经执行；开始时说明所选路径和交付终点，偏离时说明具体步骤与原因。
 - mode 发起的流程是自动执行：本 skill 读取的 skill，以及它们再读取的 skill，凡写着"自动执行时"的分支都适用。
-- 回复中的每个论断都要标明证据等级：已运行、推断、未验证。自己能跑的检查不交给用户。
+- 自己能跑的检查不交给用户。
 - 写入 GitHub（push、开 PR、创建或修改 issue）前，按 [setup](../setup/SKILL.md) 的"写入 GitHub 前检查账号"一节确认当前 gh 账号有写权限。
 - issue 状态只由 mode 修改，规则和命令见 [references/issue-state.md](references/issue-state.md)。
 - 验收结论只来自 accept，作者不能给自己出结论。
@@ -48,7 +48,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 ### 4. 收尾
 
-按以下三段汇报：
+按 [harness](../harness/SKILL.md) 的三段汇报，各段写：
 
 ```markdown
 **改了什么**

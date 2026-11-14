@@ -30,28 +30,22 @@ disable-model-invocation: true
 
 0. 检查 `git status --short`、当前分支、worktree 和已有 PR，记录暂存、未暂存及未跟踪内容。涉及多人协作或远程进展时 fetch 并比较基准与远程差异，不自动 pull。任务依赖未提交内容时先确定如何保留并带入所需基线；不能只建一个缺少依赖的 worktree 然后继续。无法安全确定基线时说明阻塞，不覆盖、stash 或丢弃已有修改。
 
-1. 清理失效的 worktree 记录，并列出遗留的 jstack worktree：
+1. 清理失效的 worktree 记录，把两个 worktree 目录写进本地排除文件（不改项目的 `.gitignore`），并列出遗留的 jstack worktree：
 
    ```bash
-   git worktree prune && git worktree list | grep -e '/.claude/worktrees/' -e '/.codex/worktrees/'
+   sh <本 skill 目录>/scripts/prepare.sh
    ```
 
    以下 worktree 正在使用，不算遗留：分支是 `<基准>` 的 worktree（集成 worktree），以及分支以 `<基准>-t` 开头的 worktree（同一集成分支下正在进行的其他 ticket）。除去它们后没有输出，表示没有遗留。还有输出时，在收尾汇报里列出这些路径，不删除，也不复用。
 
-2. 把两个 worktree 目录写进本地排除文件，已有的跳过。不改项目的 `.gitignore`：
-
-   ```bash
-   f="$(git rev-parse --git-common-dir)/info/exclude"; mkdir -p "$(dirname "$f")"; [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; for p in .claude/worktrees/ .codex/worktrees/; do grep -qxF "$p" "$f" 2>/dev/null || echo "$p" >> "$f"; done
-   ```
-
-3. 记下起点 commit，然后创建 worktree 和新分支：
+2. 记下起点 commit，然后创建 worktree 和新分支：
 
    ```bash
    git rev-parse <基准>
    git worktree add <worktree 目录>/<名称> -b <新分支> <基准>
    ```
 
-4. 之后每条命令都以 `cd <主目录>/<worktree 目录>/<名称> &&` 开头。主目录里未提交的改动不会自动出现在 worktree 中；确认第 0 步确定的任务基线在这里完整可用。
+3. 之后每条命令都以 `cd <主目录>/<worktree 目录>/<名称> &&` 开头。主目录里未提交的改动不会自动出现在 worktree 中；确认第 0 步确定的任务基线在这里完整可用。
 
 调用方给了已有的 worktree 路径和起点时（例如重试），跳过以上步骤，直接在这个 worktree 里工作。
 

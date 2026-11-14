@@ -58,7 +58,7 @@ ls -d .agents/skills/verify-* .claude/skills/verify-* 2>/dev/null
 
 ### 6. 汇报
 
-按"改了什么 / 验证了什么 / 还有什么"三段汇报。
+按 [harness](../harness/SKILL.md) 的三段汇报。
 
 ## 写入 GitHub 前检查账号
 
