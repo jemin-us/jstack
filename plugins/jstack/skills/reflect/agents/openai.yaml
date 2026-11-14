@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack reflect"
+  short_description: "把会话里的纠正沉淀成规则并登记台账"
+policy:
+  allow_implicit_invocation: false

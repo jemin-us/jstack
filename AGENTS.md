@@ -17,6 +17,10 @@ jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` �
   - `plugins/jstack/`：Codex 插件，`skills/` 的逐字节镜像加 `.codex-plugin/plugin.json`。
 - `scripts/check_version.py`：CI 用，改了会发布的文件时要求 `VERSION` 递增。
 
+## 规则台账
+
+改 `AGENTS.md`、skill 的规则或全局规则时，读 `docs/agent-rules.md`，并在其中增删对应的行。
+
 ## 命令
 
 ```bash

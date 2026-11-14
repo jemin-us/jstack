@@ -18,6 +18,7 @@ jstack 的 skill 用通用说法书写，按当前 Harness 所在的列执行。
 | 向用户提问 | AskUserQuestion | 纯文本提问并等待回复 |
 | 操作浏览器 | 内置浏览器工具；用户要求用自己的 Chrome 时用 Claude in Chrome | 已安装的 browser 或 chrome 插件；都没有时用 playwright skill |
 | 任务列表 | 当前环境提供的任务列表工具 | 当前环境提供的计划工具 |
+| 当前会话记录 | `~/.claude/projects/<项目绝对路径中的 / 换成 ->/<会话 id>.jsonl`，按修改时间取最近几个，核对第一条用户消息 | `~/.codex/sessions/<年>/<月>/<日>/rollout-*.jsonl`，按修改时间取最近几个，核对第一条用户消息 |
 | 项目指令文件 | `CLAUDE.md`；若项目只有 `AGENTS.md`，Claude Code 会读取它 | `AGENTS.md`；Codex 默认不读 `CLAUDE.md` |
 
 ## 三段汇报

@@ -1,6 +1,6 @@
 ---
 name: mode
-description: jstack 的统一入口。用户提出开发请求（加功能、改行为、修 bug、清理和重构代码），或只要其中一步（追问需求、写 spec、拆 ticket、实现指明的 ticket、诊断 bug、设计架构、独立验收、开 PR 和跟进 CI、审计代码、把规则落成检查、写 prompt、建或改 skill、暂停和恢复任务、配置项目）时使用。开发请求按 playbook 推进到 PR；单步请求读取对应的 jstack skill 并照做。只问 jstack 怎么用时使用 help。
+description: jstack 的统一入口。用户提出开发请求（加功能、改行为、修 bug、清理和重构代码），或只要其中一步（追问需求、写 spec、拆 ticket、实现指明的 ticket、诊断 bug、设计架构、独立验收、开 PR 和跟进 CI、审计代码、把规则落成检查、写 prompt、建或改 skill、精简上下文和规则、把纠正或复盘沉淀成规则、暂停和恢复任务、配置项目）时使用。开发请求按 playbook 推进到 PR；单步请求读取对应的 jstack skill 并照做。只问 jstack 怎么用时使用 help。
 ---
 
 # jstack 入口
@@ -37,6 +37,8 @@ description: jstack 的统一入口。用户提出开发请求（加功能、改
 | 审计一块代码的结构，只看不改 | [codebase-audit](../codebase-audit/SKILL.md) |
 | 固定代码基准、把反复出现的错误落成检查 | [codebase](../codebase/SKILL.md) |
 | 写或审查给 agent 读的文字 | [prompt](../prompt/SKILL.md) |
+| 精简上下文、清理规则和 skill，或换模型后重新检查规则 | [trim](../trim/SKILL.md) |
+| 把一次纠正或会话经验沉淀成规则 | [reflect](../reflect/SKILL.md) |
 | 新建、修改或审查 skill | [skill-creator-plus](../skill-creator-plus/SKILL.md) |
 | 在项目里启用 jstack、检查 gh 环境 | [setup](../setup/SKILL.md) |
 | 生成或更新项目的验证 skill | [create-verify-app](../create-verify-app/SKILL.md) |
