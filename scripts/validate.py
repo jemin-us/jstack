@@ -112,6 +112,17 @@ def main():
         for d in skills:
             if d.name not in ("help", "mode") and f"](../{d.name}/SKILL.md)" not in index_text:
                 errs.append(f"{d.name}: help 的地图和 mode 的单步请求表里都没有它，新增 skill 后要登记")
+    # 手动调用的 skill 不靠自己的 description 触发：它写的“触发说法”要原样出现在 mode 的 description 里，
+    # 否则用户这样说时 mode 接不住
+    if mode_md.is_file():
+        mode_desc = (frontmatter(mode_md.read_text(encoding="utf-8")) or {}).get("description", "")
+        for d in skills:
+            fm = frontmatter((d / "SKILL.md").read_text(encoding="utf-8")) or {}
+            if d.name == "mode" or fm.get("disable-model-invocation") != "true":
+                continue
+            for phrase in re.findall(r"“([^”]+)”", fm.get("description", "")):
+                if f"“{phrase}”" not in mode_desc:
+                    errs.append(f"{d.name}: 触发说法“{phrase}”不在 mode 的 description 里，用户这样说时不会进入 mode")
     for e in errs:
         print(f"✗ {e}")
     print(f"{'失败' if errs else '通过'}：{len(skills)} 个 skill，{len(errs)} 个问题")

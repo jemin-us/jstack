@@ -35,4 +35,4 @@
 | Codex 配置 | 每个 skill 都带 `agents/openai.yaml`，填写 `display_name`、`short_description` 和 `policy.allow_implicit_invocation` |
 | 校验 | 在仓库根目录运行 `python3 scripts/validate.py`，结果为“通过” |
 | 版本号 | 改动 `skills/` 时，递增根目录 `VERSION`，再运行 `make regenerate`；skill 自身不写 `metadata.version` |
-| 登记 | 新 skill 登记到根目录 `README.md` 的 skill 表；用户可以直接请求的，再登记到 `mode` 第 1 步的单步请求表，并在 `mode` 的 description 里补上触发说法 |
+| 登记 | 新 skill 登记到根目录 `README.md` 的 skill 表；用户可以直接请求的，再登记到 `mode` 第 1 步的单步请求表，并把它 description 里用“”引起来的触发说法原样补进 `mode` 的 description，`scripts/validate.py` 会检查 |
