@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """从两端的会话记录统计每个 skill 的真实调用。只读。
 
-只认工具调用：Claude Code 的 Skill 工具和读取 SKILL.md 的工具调用，Codex 读取 SKILL.md 的
-function_call。Codex 会把所有 skill 的路径注入每个会话，按名字 grep 全文会让每个 skill 都像被用过。
+只认两类证据：用户亲手输入的调用（Claude Code 的 /<插件>:<名称>，Codex 的 $<名称>），以及工具调用
+（Claude Code 的 Skill 工具和读取 SKILL.md 的工具调用，Codex 读取 SKILL.md 的 function_call）。
+subagent 的记录（isSidechain）不算用户输入。Codex 会把所有 skill 的路径注入每个会话，按名字 grep 全文会让每个 skill 都像被用过。
 读取按路径分两类：路径里有 /plugins/ 的算已安装插件的使用，其余多半是在源码仓库里开发 skill。
 
 用法：python3 usage.py <skill 名> [...]
@@ -36,7 +37,7 @@ def typed_command(line, names, plugin):
         return set()
     msg = e.get("message")
     content = msg.get("content") if isinstance(msg, dict) else None
-    if e.get("type") != "user" or not isinstance(content, str):
+    if e.get("type") != "user" or e.get("isSidechain") or not isinstance(content, str):
         return set()
     found = re.findall(r"<command-name>/" + re.escape(plugin) + r":([\w-]+)</command-name>", content)
     return {n for n in found if n in names}

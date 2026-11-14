@@ -69,6 +69,7 @@ class TrimScriptTests(unittest.TestCase):
         self.write("home/.claude/projects/p/b.jsonl", "\n".join(json.dumps(e) for e in [
             {"type": "user", "message": {"content": "<command-name>/jstack:accept</command-name>"}},
             {"type": "user", "message": {"content": "<command-name>/help</command-name>"}},
+            {"type": "user", "isSidechain": True, "message": {"content": "brief 引用 <command-name>/jstack:mode</command-name>"}},
             {"type": "user", "message": {"content": [{"type": "tool_result", "content": "<command-name>/jstack:spec</command-name>"}]}}]))
         calls, reads, dev = usage.claude_counts({"spec", "accept", "mode", "help"}, self.root / "home/.claude/projects")
         self.assertEqual((calls["mode"], calls["accept"], calls["help"], calls["spec"], reads["accept"], dev["accept"], reads["spec"]), (1, 1, 0, 0, 1, 1, 0))
