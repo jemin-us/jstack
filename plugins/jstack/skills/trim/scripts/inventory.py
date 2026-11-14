@@ -43,16 +43,35 @@ def rows(project, skill_roots, home):
     return out
 
 
+def paths_globs(fm):
+    """取出 paths: 的 glob，支持行内列表、带引号或不带引号的块列表。"""
+    lines = fm.splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r"^paths:[ \t]*(.*)$", line)
+        if not m:
+            continue
+        inline = m.group(1).strip()
+        if inline:
+            items = re.findall(r"[\"']([^\"']+)[\"']", inline) or [s.strip() for s in inline.strip("[]").split(",")]
+            return [s for s in items if s]
+        items = []
+        for nxt in lines[i + 1:]:
+            b = re.match(r"^\s+-\s*(.+)$", nxt)
+            if not b:
+                break
+            items.append(b.group(1).strip().strip("\"'"))
+        return items
+    return []
+
+
 def dead_globs(project):
     """返回 [(文件, glob)]：paths: 里匹配不到任何文件的 glob。"""
     out = []
     files = list(project.rglob("SKILL.md")) + list((project / ".claude" / "rules").rglob("*.md"))
     for p in files:
         fm = frontmatter(p.read_text(encoding="utf-8"))
-        m = re.search(r"^paths:\s*(.*)$", fm, re.M)
-        if not m:
-            continue
-        for g in re.findall(r"[\"']([^\"']+)[\"']", m.group(1)) or [m.group(1).strip()]:
+        globs = paths_globs(fm)
+        for g in globs:
             if not any(project.glob(g)):
                 out.append((str(p.relative_to(project)), g))
     return out

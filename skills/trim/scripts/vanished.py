@@ -13,11 +13,14 @@ import subprocess
 
 def git_lines(base, paths):
     out = subprocess.run(["git", "diff", "-U0", base, "--", *paths], capture_output=True, text=True, check=True).stdout
-    result, current = [], None
+    result, current, in_header = [], None, False
     for line in out.splitlines():
-        if line.startswith("--- "):
-            current = line[6:] if line.startswith("--- a/") else line[4:]
-        elif line.startswith("-") and not line.startswith("---") and line[1:].strip():
+        if line.startswith("diff --git "):
+            in_header = True
+            current = line.split(" b/", 1)[-1]
+        elif in_header and line.startswith("@@"):
+            in_header = False
+        elif not in_header and line.startswith("-") and line[1:].strip():
             result.append((current, line[1:]))
     return result
 

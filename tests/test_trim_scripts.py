@@ -53,7 +53,9 @@ class TrimScriptTests(unittest.TestCase):
         self.write("proj/src/a.ts", "")
         self.write("proj/.claude/rules/ts.md", "---\npaths: [\"src/**/*.ts\"]\n---\n")
         self.write("proj/.claude/rules/old.md", "---\npaths: [\"lib/**/*.js\"]\n---\n")
-        self.assertEqual(inventory.dead_globs(self.root / "proj"), [(".claude/rules/old.md", "lib/**/*.js")])
+        self.write("proj/.claude/rules/block.md", "---\npaths:\n  - src/**/*.ts\n  - \"lib/**\"\n---\n")
+        self.assertEqual(sorted(inventory.dead_globs(self.root / "proj")),
+                         [(".claude/rules/block.md", "lib/**"), (".claude/rules/old.md", "lib/**/*.js")])
 
     def test_usage_ignores_injected_paths_and_splits_installed(self):
         injected = {"type": "user", "message": {"content": "可用 skill：/x/plugins/jstack/skills/spec/SKILL.md"}}
@@ -63,13 +65,34 @@ class TrimScriptTests(unittest.TestCase):
                     "input": {"file_path": "/repo/skills/accept/SKILL.md"}}]}}
         call = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "jstack:mode"}}]}}
         self.write("home/.claude/projects/p/a.jsonl", "\n".join(json.dumps(e) for e in [injected, read_inst, read_src, call]))
+        self.write("home/.claude/projects/p/b.jsonl", json.dumps({"type": "user", "message": {"content": "<command-name>/jstack:accept</command-name>"}}))
         calls, reads, dev = usage.claude_counts({"spec", "accept", "mode"}, self.root / "home/.claude/projects")
-        self.assertEqual((calls["mode"], reads["accept"], dev["accept"], reads["spec"]), (1, 1, 1, 0))
+        self.assertEqual((calls["mode"], calls["accept"], reads["accept"], dev["accept"], reads["spec"]), (1, 1, 1, 1, 0))
         self.write("home/.codex/sessions/r.jsonl", "\n".join([
             '{"type":"session_meta","instructions":"/u/.codex/plugins/cache/jstack/skills/tickets/SKILL.md"}',
-            '{"type":"function_call","arguments":"cat /u/.codex/plugins/cache/jstack/skills/accept/SKILL.md"}']))
-        xreads, _ = usage.codex_counts({"tickets", "accept"}, [self.root / "home/.codex/sessions"])
-        self.assertEqual((xreads["accept"], xreads["tickets"]), (1, 0))
+            '{"type":"function_call","arguments":"cat /u/.codex/plugins/cache/jstack/skills/accept/SKILL.md"}',
+            '{"type":"message","role":"user","content":"$accept 当前分支，别用 $accept-x"}']))
+        xreads, _, xcalls = usage.codex_counts({"tickets", "accept"}, [self.root / "home/.codex/sessions"])
+        self.assertEqual((xreads["accept"], xreads["tickets"], xcalls["accept"]), (1, 0, 1))
+
+    def test_vanished_git_keeps_deleted_lines_that_start_with_dashes(self):
+        import subprocess
+        repo = self.root / "g"
+        repo.mkdir()
+        run = lambda *a: subprocess.run(a, cwd=repo, check=True, capture_output=True)
+        run("git", "init", "-q")
+        (repo / "a.md").write_text("保留\n---\n--- 像文件头\n--plugin-dir x\n")
+        run("git", "add", ".")
+        run("git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "i")
+        (repo / "a.md").write_text("保留\n")
+        import os
+        cwd = os.getcwd()
+        os.chdir(repo)
+        try:
+            lines = vanished.git_lines("HEAD", [])
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(lines, [("a.md", "---"), ("a.md", "--- 像文件头"), ("a.md", "--plugin-dir x")])
 
     def test_vanished_pair_lists_removed_and_changed_lines(self):
         before = self.write("before.md", "保留\n删掉这行\n改前\n\n")

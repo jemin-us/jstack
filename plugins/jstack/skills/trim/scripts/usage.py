@@ -10,6 +10,7 @@ function_call。Codex 会把所有 skill 的路径注入每个会话，按名字
 import argparse
 from collections import Counter
 import json
+import re
 from pathlib import Path
 
 
@@ -28,8 +29,11 @@ def hits(names, text):
 def claude_counts(names, root):
     calls, reads, dev = Counter(), Counter(), Counter()
     for f in root.glob("**/*.jsonl"):
-        seen, seen_dev = set(), set()
+        seen, seen_dev, called = set(), set(), set()
         for line in open(f, errors="ignore"):
+            for m in re.finditer(r"<command-name>/?(?:[\w-]+:)?([\w-]+)</command-name>", line):
+                if m.group(1) in names:
+                    called.add(m.group(1))
             if '"tool_use"' not in line:
                 continue
             try:
@@ -44,28 +48,32 @@ def claude_counts(names, root):
                 inp = b.get("input") or {}
                 skill = str(inp.get("skill", "")).split(":")[-1]
                 if b.get("name") == "Skill" and skill in names:
-                    calls[skill] += 1
+                    called.add(skill)
                 inst, src = hits(names, json.dumps(inp, ensure_ascii=False))
                 seen |= inst
                 seen_dev |= src
         reads.update(seen)
         dev.update(seen_dev)
+        calls.update(called)
     return calls, reads, dev
 
 
 def codex_counts(names, roots):
-    reads, dev = Counter(), Counter()
+    reads, dev, calls = Counter(), Counter(), Counter()
     for root in roots:
         for f in root.glob("**/*.jsonl"):
-            seen, seen_dev = set(), set()
+            seen, seen_dev, called = set(), set(), set()
             for line in open(f, errors="ignore"):
+                if '"role":"user"' in line:
+                    called.update(n for n in names if re.search(r"\$" + re.escape(n) + r"(?![\w-])", line))
                 if '"function_call"' in line or '"custom_tool_call"' in line:
                     inst, src = hits(names, line)
                     seen |= inst
                     seen_dev |= src
             reads.update(seen)
             dev.update(seen_dev)
-    return reads, dev
+            calls.update(called)
+    return reads, dev, calls
 
 
 def main(argv=None):
@@ -75,11 +83,11 @@ def main(argv=None):
     a = ap.parse_args(argv)
     home = Path(a.home)
     calls, creads, cdev = claude_counts(set(a.names), home / ".claude/projects")
-    xreads, xdev = codex_counts(set(a.names), [home / ".codex/sessions", home / ".codex/archived_sessions"])
-    print("| skill | Claude Skill 调用 | Claude 读取已安装 | Codex 读取已安装 | 源码路径读取（两端） |\n|---|---|---|---|---|")
-    for n in sorted(a.names, key=lambda n: -(calls[n] + creads[n] + xreads[n])):
-        print(f"| {n} | {calls[n]} | {creads[n]} | {xreads[n]} | {cdev[n] + xdev[n]} |")
-    print("\n数字是会话数（Skill 调用是次数）。0 次只说明这段记录里没人用，不等于可以删：先查是否被其他 skill 按路径读取。")
+    xreads, xdev, xcalls = codex_counts(set(a.names), [home / ".codex/sessions", home / ".codex/archived_sessions"])
+    print("| skill | Claude 调用（Skill 工具和 /命令） | Codex 手动调用（$名称） | Claude 读取已安装 | Codex 读取已安装 | 源码路径读取（两端） |\n|---|---|---|---|---|---|")
+    for n in sorted(a.names, key=lambda n: -(calls[n] + xcalls[n] + creads[n] + xreads[n])):
+        print(f"| {n} | {calls[n]} | {xcalls[n]} | {creads[n]} | {xreads[n]} | {cdev[n] + xdev[n]} |")
+    print("\n数字都是会话数。0 次只说明这段记录里没人用，不等于可以删：先查是否被其他 skill 按路径读取。")
 
 
 if __name__ == "__main__":
