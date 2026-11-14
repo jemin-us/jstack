@@ -49,6 +49,12 @@ class TrimScriptTests(unittest.TestCase):
         self.assertIn("无 paths: 的规则 .claude/rules/always.md", names)
         self.assertFalse(any("scoped" in s or "manual" in s for s in names))
 
+    def test_inventory_reports_globs_that_match_nothing(self):
+        self.write("proj/src/a.ts", "")
+        self.write("proj/.claude/rules/ts.md", "---\npaths: [\"src/**/*.ts\"]\n---\n")
+        self.write("proj/.claude/rules/old.md", "---\npaths: [\"lib/**/*.js\"]\n---\n")
+        self.assertEqual(inventory.dead_globs(self.root / "proj"), [(".claude/rules/old.md", "lib/**/*.js")])
+
     def test_usage_ignores_injected_paths_and_splits_installed(self):
         injected = {"type": "user", "message": {"content": "可用 skill：/x/plugins/jstack/skills/spec/SKILL.md"}}
         read_inst = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Read",

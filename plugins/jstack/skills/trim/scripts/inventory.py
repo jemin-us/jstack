@@ -43,6 +43,21 @@ def rows(project, skill_roots, home):
     return out
 
 
+def dead_globs(project):
+    """返回 [(文件, glob)]：paths: 里匹配不到任何文件的 glob。"""
+    out = []
+    files = list(project.rglob("SKILL.md")) + list((project / ".claude" / "rules").rglob("*.md"))
+    for p in files:
+        fm = frontmatter(p.read_text(encoding="utf-8"))
+        m = re.search(r"^paths:\s*(.*)$", fm, re.M)
+        if not m:
+            continue
+        for g in re.findall(r"[\"']([^\"']+)[\"']", m.group(1)) or [m.group(1).strip()]:
+            if not any(project.glob(g)):
+                out.append((str(p.relative_to(project)), g))
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", default=".")
@@ -55,6 +70,8 @@ def main(argv=None):
     print("| 端 | 来源 | 字符数 |\n|---|---|---|")
     for client, src, n in sorted(data, key=lambda r: -r[2]):
         print(f"| {client} | {src} | {n} |")
+    for f, g in dead_globs(project):
+        print(f"\n匹配不到文件的 paths: glob：{f} 的 `{g}`")
     print(f"\n合计 {sum(r[2] for r in data)} 字符。只统计你能维护的内容；客户端系统提示词、其他插件和 Codex 自动生成的 memory 不在内。")
 
 
