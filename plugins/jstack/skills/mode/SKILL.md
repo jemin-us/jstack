@@ -30,7 +30,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 | bug-fix | 现有行为出错、报错、性能退化 | [bug-fix.md](references/playbooks/bug-fix.md) |
 | maintenance | 清理冗余、定期重构、减少代码基线中的已有违规 | [maintenance.md](references/playbooks/maintenance.md) |
 | perf | 有测量依据的性能退化或明确性能目标 | [perf.md](references/playbooks/perf.md) |
-| visual | 按设计或参照修复视觉与交互差异 | [visual.md](references/playbooks/visual.md) |
+| visual | 按设计、截图或参照调整视觉与交互，包括同一任务内追加的样式反馈 | [visual.md](references/playbooks/visual.md) |
 
 完成标准：向用户说明选了哪个 playbook，并给出一句理由。选 change 时，向用户说明这次交给 implement，最终汇报里也写明由 implement 完成；implement 自己建 worktree、实现，再由 finish 执行 accept、修复闭环、PR 和清理，读取它的 `SKILL.md` 并照做后不再执行下面的步骤。maintenance、perf、visual 按对应 playbook 完成后结束，不重复执行通用收尾。只读调查和服务操作不进入开发交付流程；选用适合的只读技能或直接操作并验证，不为这些任务创建开发 PR。
 
@@ -59,6 +59,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 **还有什么**
 - 受阻的验收检查，以及原因
+- 当前 HEAD 未验证的检查；用户确认结束不代替技术验收
 - 按推荐答案定的假设、subagent 做出的假设、选定的测试接缝
 - 仍为 open 的 issue 及其状态（验收失败 / 验收受阻 / 待交付验证）
 - 跳过的步骤和原因
