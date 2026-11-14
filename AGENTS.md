@@ -4,7 +4,7 @@ Claude Code 和 Codex 共用这份指南，两端都直接读取 `AGENTS.md`，�
 
 ## 项目
 
-jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` 下的同一份源码。skill 列表和职责见 `README.md`。
+jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` 下的同一份源码。
 
 ## 仓库结构
 
@@ -15,7 +15,6 @@ jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` �
   - `.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`：Claude Code 插件和 marketplace。
   - `.agents/plugins/marketplace.json`：Codex marketplace，指向 `plugins/jstack`。
   - `plugins/jstack/`：Codex 插件，`skills/` 的逐字节镜像加 `.codex-plugin/plugin.json`。
-- `scripts/validate.py`：校验 skill 结构和引用边界。
 - `scripts/check_version.py`：CI 用，改了会发布的文件时要求 `VERSION` 递增。
 
 ## 命令
