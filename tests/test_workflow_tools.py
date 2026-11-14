@@ -128,6 +128,15 @@ class RunnerTests(unittest.TestCase):
             path.write_text(text)
             with self.assertRaises(ValueError): runner.event_summary(path,'codex')
 
+    def test_claude_string_message_and_content_are_counted_without_crash(self):
+        path=self.root/'events'
+        path.write_text('\n'.join([
+            '{"type":"user","message":{"role":"user","content":"纯文本"}}',
+            '{"type":"system","subtype":"notice","message":"字符串形式的 message"}',
+            '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Read","input":{}}]}}',
+            '{"type":"result","subtype":"success","is_error":false}']))
+        self.assertEqual(runner.event_summary(path,'claude')['tool_events'],1)
+
     def test_codex_independent_completion_requires_spawn_identity_and_return(self):
         def call(tool, receivers, states=None):
             return {'item':{'type':'collab_tool_call','status':'completed','tool':tool,'receiver_thread_ids':receivers,'agents_states':states or {}}}

@@ -106,7 +106,8 @@ def independent_reviewers(events, client):
     else:
         calls = set()
         for event in events:
-            blocks = event.get('message', {}).get('content', [])
+            message = event.get('message')
+            blocks = message.get('content') if isinstance(message, dict) else None
             if not isinstance(blocks, list):
                 continue
             for block in blocks:
@@ -134,7 +135,12 @@ def event_summary(path, client):
         terminal=[e for e in events if e.get('type')=='result']
         if not terminal or terminal[-1].get('is_error') or terminal[-1].get('subtype')!='success':
             raise ValueError('Claude 未成功结束')
-        tools=sum(block.get('type')=='tool_use' for e in events for block in e.get('message',{}).get('content',[]) if isinstance(block,dict))
+        tools=0
+        for e in events:
+            message=e.get('message')
+            blocks=message.get('content') if isinstance(message,dict) else None
+            if isinstance(blocks,list):
+                tools+=sum(isinstance(block,dict) and block.get('type')=='tool_use' for block in blocks)
         usage=terminal[-1].get('usage')
     return {'events':len(events),'tool_events':tools,'usage':usage, 'independent_reviewers':independent_reviewers(events,client)}
 
