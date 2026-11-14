@@ -1,6 +1,6 @@
 ---
 name: mode
-description: jstack 的统一入口。用户提出开发请求（加功能、改行为、修 bug、清理和重构代码），或只要其中一步（追问需求、写 spec、拆 ticket、实现指明的 ticket、诊断 bug、设计架构、独立验收、开 PR 和跟进 CI、审计代码、把规则落成检查、写 prompt、建或改 skill、精简上下文和规则、把纠正或复盘沉淀成规则、暂停和恢复任务、配置项目）时使用。开发请求按 playbook 推进到 PR；单步请求读取对应的 jstack skill 并照做。只问 jstack 怎么用时使用 help。
+description: jstack 的统一入口。用户提出开发请求（加功能、改行为、修 bug、清理和重构代码），或只要其中一步（追问需求、写 spec、拆 ticket、实现指明的 ticket、诊断 bug、设计架构、独立验收、开 PR 和跟进 CI、审计代码、把规则落成检查、写 prompt、建或改 skill、精简上下文和规则、把纠正或复盘沉淀成规则（“记成规则”“以后别再犯”）、暂停和恢复任务、配置项目）时使用。开发请求按 playbook 推进到 PR；单步请求读取对应的 jstack skill 并照做。只问 jstack 怎么用时使用 help。
 ---
 
 # jstack 入口
