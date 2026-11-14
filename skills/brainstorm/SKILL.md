@@ -1,6 +1,7 @@
 ---
 name: brainstorm
 description: 当用户要求追问需求、澄清模糊想法、讨论方案或设计时使用，例如“先帮我把需求问清楚”。逐轮提问并给出推荐答案，双方确认理解一致前不动手。需求已经清楚、要写成 spec 时使用 `spec`；要按工作流完整推进新功能时使用 mode。
+disable-model-invocation: true
 ---
 
 # 需求追问

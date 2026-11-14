@@ -1,6 +1,7 @@
 ---
 name: implement
 description: "当用户指明要实现的 ticket 编号时使用，例如“实现 #42”“按 #42 写代码”；也用于已讨论清楚、可以直接编码的具体改动或重构。测试先行地编写代码并 commit。泛化的新功能或 bug 请求使用 mode；独立验收使用 accept。"
+disable-model-invocation: true
 ---
 
 # 实现

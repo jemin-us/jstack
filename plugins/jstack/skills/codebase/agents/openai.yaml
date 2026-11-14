@@ -2,4 +2,4 @@ interface:
   display_name: "jstack codebase"
   short_description: "把项目的形状规则落成会失败的检查并接进 CI"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

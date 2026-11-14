@@ -2,4 +2,4 @@ interface:
   display_name: "jstack skill-creator-plus"
   short_description: "新建、修改和审查 skill"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

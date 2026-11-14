@@ -1,6 +1,7 @@
 ---
 name: session
 description: 当用户要求暂停、恢复、交接或继续此前长任务时使用。保存最少的工作状态，核实原分支和证据后从未完成步骤继续；普通新任务使用 mode。
+disable-model-invocation: true
 ---
 
 # 任务暂停与恢复
