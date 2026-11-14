@@ -48,6 +48,8 @@ codex plugin add jstack@jstack
 | `help` | 说明该用哪个 skill、怎么调用 |
 | `skill-creator-plus` | 新建、修改和审查 skill |
 | `prompt` | 编写和审查给 agent 读的文字 |
+| `trim` | 盘点每轮加载的上下文，确认后先搬家再压缩，验证没删过头、搬走的内容会被加载 |
+| `reflect` | 把会话里的纠正沉淀成规则，落到能管住它的最高一级，登记规则台账 |
 | `worktree` | 新建和清理项目内的 git worktree，把多个分支合并到集成 worktree，供其他 skill 读取 |
 | `harness` | 通用说法在 Claude Code 和 Codex 中的对应操作，供其他 skill 读取 |
 | `finish` | 独立验收、修复、PR/CI 和清理，供开发流程读取 |
