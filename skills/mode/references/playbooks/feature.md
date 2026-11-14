@@ -9,6 +9,7 @@
 2. **写 spec**：读取 [spec](../../../spec/SKILL.md) 并照做。
    完成标准：spec issue 已发布，记下编号。之后按 mode 第 2 步新建集成 worktree 和集成分支 `jstack/spec-<编号>`。
 3. **拆 ticket**：读取 [tickets](../../../tickets/SKILL.md) 并照做。
+   需求附带截图或设计稿时，按 [visual.md](visual.md) 第 1 步把它转成验收条目，写进对应 ticket 的验收检查。
    完成标准：ticket 已发布，并带有子 issue 关系和阻塞关系。
 4. **按波次实现和验收**：重复以下过程，直到没有可以开工的 ticket。
    1. **算出本波**：阻塞项都已合并到集成分支、且本次尚未验收并合并的 open ticket，构成本波。维护已合并 ticket 与 commit 的记录：等待 CI 而保持 open 的已合并项不再派发，其依赖视为已满足；BLOCKED 的 ticket 不算完成，不合并。一波最多 3 张，多出的留到下一波。阻塞项用 [issue-state.md](../issue-state.md) 里的命令查。
