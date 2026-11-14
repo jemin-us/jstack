@@ -1,0 +1,112 @@
+"""trim 的确定性脚本：盘点、调用统计、消失的行。"""
+import importlib.util
+import io
+import json
+from contextlib import redirect_stdout
+from pathlib import Path
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load(name):
+    spec = importlib.util.spec_from_file_location(name, ROOT / f"skills/trim/scripts/{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+inventory, usage, vanished = load("inventory"), load("usage"), load("vanished")
+
+
+class TrimScriptTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def write(self, rel, text):
+        p = self.root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        return p
+
+    def test_inventory_counts_only_always_loaded(self):
+        self.write("home/.claude/CLAUDE.md", "abc")
+        self.write("proj/AGENTS.md", "12345")
+        self.write("proj/.claude/rules/always.md", "xx")
+        self.write("proj/.claude/rules/scoped.md", "---\npaths: [\"**/*.ts\"]\n---\nyy")
+        self.write("proj/skills/auto/SKILL.md", "---\nname: auto\ndescription: 四个字符\n---\n正文")
+        self.write("proj/skills/manual/SKILL.md", "---\nname: manual\ndescription: 不该计入\ndisable-model-invocation: true\n---\n")
+        rows = inventory.rows(self.root / "proj", [self.root / "proj/skills"], self.root / "home")
+        names = {src: n for _, src, n in rows}
+        self.assertEqual(names["全局规则 ~/.claude/CLAUDE.md"], 3)
+        self.assertEqual(names["项目 AGENTS.md"], 5)
+        self.assertEqual(names["description auto"], 4)
+        self.assertIn("无 paths: 的规则 .claude/rules/always.md", names)
+        self.assertFalse(any("scoped" in s or "manual" in s for s in names))
+
+    def test_inventory_reports_globs_that_match_nothing(self):
+        self.write("proj/src/a.ts", "")
+        self.write("proj/.claude/rules/ts.md", "---\npaths: [\"src/**/*.ts\"]\n---\n")
+        self.write("proj/.claude/rules/old.md", "---\npaths: [\"lib/**/*.js\"]\n---\n")
+        self.write("proj/.claude/rules/block.md", "---\npaths:\n  - src/**/*.ts\n  - \"lib/**\"\n---\n")
+        self.write("proj/.claude/rules/flat.md", "---\npaths:\n- src/**/*.ts\n- vendor/**\n---\n")
+        self.assertEqual(sorted(inventory.dead_globs(self.root / "proj")),
+                         [(".claude/rules/block.md", "lib/**"), (".claude/rules/flat.md", "vendor/**"), (".claude/rules/old.md", "lib/**/*.js")])
+
+    def test_usage_ignores_injected_paths_and_splits_installed(self):
+        injected = {"type": "user", "message": {"content": "可用 skill：/x/plugins/jstack/skills/spec/SKILL.md"}}
+        read_inst = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Read",
+                     "input": {"file_path": "/h/.claude/plugins/cache/jstack/skills/accept/SKILL.md"}}]}}
+        read_src = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Read",
+                    "input": {"file_path": "/repo/skills/accept/SKILL.md"}}]}}
+        call = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "jstack:mode"}}]}}
+        self.write("home/.claude/projects/p/a.jsonl", "\n".join(json.dumps(e) for e in [injected, read_inst, read_src, call]))
+        self.write("home/.claude/projects/p/b.jsonl", "\n".join(json.dumps(e) for e in [
+            {"type": "user", "message": {"content": "<command-name>/jstack:accept</command-name>"}},
+            {"type": "user", "message": {"content": "<command-name>/help</command-name>"}},
+            {"type": "user", "message": {"content": [{"type": "tool_result", "content": "<command-name>/jstack:spec</command-name>"}]}}]))
+        calls, reads, dev = usage.claude_counts({"spec", "accept", "mode", "help"}, self.root / "home/.claude/projects")
+        self.assertEqual((calls["mode"], calls["accept"], calls["help"], calls["spec"], reads["accept"], dev["accept"], reads["spec"]), (1, 1, 0, 0, 1, 1, 0))
+        self.write("home/.codex/sessions/r.jsonl", "\n".join([
+            '{"type":"session_meta","instructions":"/u/.codex/plugins/cache/jstack/skills/tickets/SKILL.md"}',
+            '{"type":"function_call","arguments":"cat /u/.codex/plugins/cache/jstack/skills/accept/SKILL.md"}',
+            '{"type":"message","role":"user","content":"$accept 当前分支，别用 $accept-x"}']))
+        xreads, _, xcalls = usage.codex_counts({"tickets", "accept"}, [self.root / "home/.codex/sessions"])
+        self.assertEqual((xreads["accept"], xreads["tickets"], xcalls["accept"]), (1, 0, 1))
+
+    def test_vanished_git_keeps_deleted_lines_that_start_with_dashes(self):
+        import subprocess
+        repo = self.root / "g"
+        repo.mkdir()
+        run = lambda *a: subprocess.run(a, cwd=repo, check=True, capture_output=True)
+        run("git", "init", "-q")
+        (repo / "a.md").write_text("保留\n---\n--- 像文件头\n--plugin-dir x\n")
+        run("git", "add", ".")
+        run("git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "i")
+        (repo / "a.md").write_text("保留\n")
+        import os
+        cwd = os.getcwd()
+        os.chdir(repo)
+        try:
+            lines = vanished.git_lines("HEAD", [])
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(lines, [("a.md", "---"), ("a.md", "--- 像文件头"), ("a.md", "--plugin-dir x")])
+
+    def test_vanished_pair_lists_removed_and_changed_lines(self):
+        before = self.write("before.md", "保留\n删掉这行\n改前\n\n")
+        after = self.write("after.md", "保留\n改后\n")
+        self.assertEqual([t for _, t in vanished.pair_lines(before, after)], ["删掉这行", "改前"])
+        out = io.StringIO()
+        with redirect_stdout(out):
+            vanished.main(["--pair", str(before), str(after)])
+        self.assertIn("共 2 行", out.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()

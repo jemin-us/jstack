@@ -30,9 +30,9 @@
 | 项目 | 约定 |
 |---|---|
 | 源码位置 | `skills/<技能>/` |
-| 调用方式 | 默认自动调用。两处设置保持一致：SKILL.md 不写 `disable-model-invocation: true`，`agents/openai.yaml` 写 `allow_implicit_invocation: true`；改成手动调用时两处同时改。只供其他 skill 读取的 skill（`worktree`、`harness`、`finish`）设为手动调用 |
+| 调用方式 | 只有 `mode` 和 `help` 自动调用，新 skill 默认手动调用。两处设置保持一致：SKILL.md 写 `disable-model-invocation: true`，`agents/openai.yaml` 写 `allow_implicit_invocation: false` |
 | 跨 skill 引用 | 只链接其他 skill 的 `SKILL.md`，不链接它的 `references/`、`scripts/`；两个以上 skill 共用的内容抽成单独的 skill |
 | Codex 配置 | 每个 skill 都带 `agents/openai.yaml`，填写 `display_name`、`short_description` 和 `policy.allow_implicit_invocation` |
 | 校验 | 在仓库根目录运行 `python3 scripts/validate.py`，结果为“通过” |
 | 版本号 | 改动 `skills/` 时，递增根目录 `VERSION`，再运行 `make regenerate`；skill 自身不写 `metadata.version` |
-| 登记 | 新 skill 登记到根目录 `README.md` 的 skill 表和 `help` 的"地图" |
+| 登记 | 新 skill 登记到根目录 `README.md` 的 skill 表；用户可以直接请求的，再登记到 `mode` 第 1 步的单步请求表，并在 `mode` 的 description 里补上触发说法 |

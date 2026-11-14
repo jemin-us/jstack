@@ -1,0 +1,5 @@
+interface:
+  display_name: "jstack trim"
+  short_description: "盘点并精简每轮加载的上下文，验证没删过头"
+policy:
+  allow_implicit_invocation: false
