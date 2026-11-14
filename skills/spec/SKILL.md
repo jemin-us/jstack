@@ -1,6 +1,7 @@
 ---
 name: spec
 description: 当用户要求把已讨论清楚的需求或讨论结果写成 spec、发布 spec issue 时使用，例如“把讨论结果写成 spec”。按模板整理成 spec 并发布为 GitHub issue。需求还不清楚时使用 brainstorm；泛化的新功能请求使用 mode；拆 ticket 使用 `tickets`。
+disable-model-invocation: true
 ---
 
 # 生成 spec

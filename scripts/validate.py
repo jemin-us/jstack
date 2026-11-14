@@ -102,12 +102,16 @@ def main():
         errs.append("skills/ 下没有 skill")
     for d in skills:
         errs += check_skill(d)
+    # 每个 skill 都要能被找到：登记在 help 的地图或 mode 的单步请求表里
     help_md = root / "skills" / "help" / "SKILL.md"
+    mode_md = root / "skills" / "mode" / "SKILL.md"
     if help_md.is_file():
-        help_text = help_md.read_text(encoding="utf-8")
+        index_text = help_md.read_text(encoding="utf-8")
+        if mode_md.is_file():
+            index_text += mode_md.read_text(encoding="utf-8")
         for d in skills:
-            if d.name != "help" and f"](../{d.name}/SKILL.md)" not in help_text:
-                errs.append(f"help: 地图里没有 {d.name}，新增 skill 后要登记")
+            if d.name not in ("help", "mode") and f"](../{d.name}/SKILL.md)" not in index_text:
+                errs.append(f"{d.name}: help 的地图和 mode 的单步请求表里都没有它，新增 skill 后要登记")
     for e in errs:
         print(f"✗ {e}")
     print(f"{'失败' if errs else '通过'}：{len(skills)} 个 skill，{len(errs)} 个问题")

@@ -15,7 +15,7 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 
 ### 2. 对照地图选 skill
 
-按下面的"地图"选出 skill。地图里的一句话只用来定位；向用户说明一个 skill 做什么、会在哪里停下来等用户之前，先读取它的 `SKILL.md`，按正文回答。
+按下面的"地图"和 mode 第 1 步的单步请求表选出 skill。地图里的一句话只用来定位；向用户说明一个 skill 做什么、会在哪里停下来等用户之前，先读取它的 `SKILL.md`，按正文回答。
 
 完成标准：选中的每个 skill 的 `SKILL.md` 都已读过。
 
@@ -54,30 +54,7 @@ description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该�
 
 ### 只做一步
 
-| 情况 | skill |
-|---|---|
-| 架构、领域模型、跨模块接口设计 | [architect](../architect/SKILL.md) |
-| 暂停、恢复或交接长任务 | [session](../session/SKILL.md) |
-| 技能流程的行为评测 | [evaluate](../evaluate/SKILL.md) |
-| 想法还模糊，只想先讨论清楚 | [brainstorm](../brainstorm/SKILL.md) |
-| 已讨论清楚，只要一份 spec | [spec](../spec/SKILL.md) |
-| 已有 spec，只要拆成 ticket | [tickets](../tickets/SKILL.md) |
-| 已有 ticket，或改动已经明确，只要实现 | [implement](../implement/SKILL.md) |
-| 只要复现 bug、定位根因 | [diagnosing-bugs](../diagnosing-bugs/SKILL.md) |
-| 已有分支或 commit，只要独立验收 | [accept](../accept/SKILL.md) |
-| PR 状态、review、CI、开 PR 或明确合并 | [pr](../pr/SKILL.md) |
-
-### 不属于开发流程
-
-| 情况 | skill |
-|---|---|
-| 生成或更新项目的验证 skill | [create-verify-app](../create-verify-app/SKILL.md) |
-| 固定项目的代码基准，把规则落成检查 | [codebase](../codebase/SKILL.md) |
-| 审计一块代码的结构问题，只看不改 | [codebase-audit](../codebase-audit/SKILL.md) |
-| 写或审查 `CLAUDE.md`、`AGENTS.md`、prompt 等给 agent 读的文字 | [prompt](../prompt/SKILL.md) |
-| 新建、修改或审查 skill | [skill-creator-plus](../skill-creator-plus/SKILL.md) |
-
-### 不由用户调用
+直接说出这一步，mode 会按它第 1 步的单步请求表读取对应 skill；也可以用 `/jstack:<名称>` 手动调用。表见 [mode](../mode/SKILL.md)。除 mode 和 help 外，jstack 的 skill 都不会自动触发。
 
 [worktree](../worktree/SKILL.md)、[harness](../harness/SKILL.md)、[finish](../finish/SKILL.md) 只供其他 skill 读取。用户问到时说明这一点，不建议直接调用。
 

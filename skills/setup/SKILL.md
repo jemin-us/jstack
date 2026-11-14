@@ -1,6 +1,7 @@
 ---
 name: setup
 description: 当任务涉及在项目中启用 jstack、检查 git 与 gh 环境、确认 GitHub 账号和默认仓库时使用。运行只读检查脚本，补齐 gh 安装、账号写权限和默认仓库，项目没有验证 skill 时生成一个。只生成或更新验证 skill 使用 create-verify-app。
+disable-model-invocation: true
 ---
 
 # 配置项目

@@ -1,6 +1,7 @@
 ---
 name: diagnosing-bugs
 description: 当用户要求复现 bug、定位根因、排查报错、异常行为或性能退化时使用。先取得真实症状和复现证据，再确认根因、修复并验证；用户只要诊断时给出诊断结论后结束。泛化的修 bug 请求使用 mode；独立判定修复是否完成使用 accept。
+disable-model-invocation: true
 ---
 
 # 定位并修复 bug

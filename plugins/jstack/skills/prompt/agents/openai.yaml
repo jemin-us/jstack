@@ -2,4 +2,4 @@ interface:
   display_name: "jstack prompt"
   short_description: "写和审查给 agent 读的文字，包括 /goal 条件"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

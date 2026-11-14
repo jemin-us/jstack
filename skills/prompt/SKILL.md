@@ -1,6 +1,7 @@
 ---
 name: prompt
 description: 当用户要写、改或审查给 agent 读的文字时使用，例如 AGENTS.md、CLAUDE.md、系统提示词、prompt、subagent 的 brief、`/goal` 条件、SKILL.md 和 description。区分步骤和参考，写指针和完成标准，逐句修剪。新建 skill 的目录、frontmatter 和校验使用 skill-creator-plus。
+disable-model-invocation: true
 ---
 
 # 写给 agent 的文字

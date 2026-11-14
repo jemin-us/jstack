@@ -1,6 +1,7 @@
 ---
 name: codebase
 description: 当用户要求固定项目的代码基准、管住分层或架构不被改乱、给仓库加架构检查、把已有的检查接进 CI，或要求把反复出现的错误固化成规则时使用。把形状规则落成会失败的检查，接进 CI 已在运行的命令，已有违规冻结成只减不增的基线。实现功能或修 bug 使用 mode；让 agent 像用户一样操作 app 来验证使用 create-verify-app。
+disable-model-invocation: true
 ---
 
 # 固定代码基准

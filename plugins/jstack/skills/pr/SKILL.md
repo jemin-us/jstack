@@ -1,6 +1,7 @@
 ---
 name: pr
 description: 当用户要求开 PR、检查 PR 状态、处理 review、跟进 CI 或合并指定 PR 时使用。将分支推进到可合并状态；只有用户明确要求合并时执行合并并核验结果。写代码使用 implement；验收使用 accept。
+disable-model-invocation: true
 ---
 
 # push 并开 PR

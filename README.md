@@ -20,7 +20,7 @@ codex plugin add jstack@jstack
 
 ## Skills
 
-除 `worktree`、`harness`、`finish` 和 `evaluate` 外，所有 skill 都会按请求自动加载，也可以用 `/jstack:<名称>` 手动调用。前三个只供其他 skill 读取；evaluate 按用户评测请求或维护流程读取，均不自动加载。泛化的新功能和 bug 请求由入口 `mode` 承接；指明 ticket 编号、spec 编号或待验收分支的请求直接加载对应的 skill。开发任务默认连续完成实现、验证、独立审查、commit、push、PR 和 CI 跟进，不逐步请求继续。需要 spec 和 ticket 时由 mode 自动发布。只分析的请求不改代码；用户明确限定本地修改或禁止提交时按限定范围交付。合并、发布和不可恢复的数据删除不包含在默认开发流程里。
+只有 `mode` 和 `help` 会按请求自动加载，其余 skill 都要用 `/jstack:<名称>`（Codex 为 `$<名称>`）手动调用，或由 mode 读取。mode 是统一入口：开发请求按 playbook 推进，只要其中一步的请求读取对应 skill。`worktree`、`harness`、`finish` 只供其他 skill 读取。开发任务默认连续完成实现、验证、独立审查、commit、push、PR 和 CI 跟进，不逐步请求继续。需要 spec 和 ticket 时由 mode 自动发布。只分析的请求不改代码；用户明确限定本地修改或禁止提交时按限定范围交付。合并、发布和不可恢复的数据删除不包含在默认开发流程里。
 
 适用范围：开发任务按影响范围选择路径。局部文案或样式改动可以直接走 implement，不必创建 spec 或 ticket，但仍验证实际效果、独立审查并自动交付。只读调查和服务操作不进入开发交付流程。
 

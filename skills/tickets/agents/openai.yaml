@@ -2,4 +2,4 @@ interface:
   display_name: "jstack tickets"
   short_description: "把 spec 拆成可独立执行的 ticket"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

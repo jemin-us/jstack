@@ -1,6 +1,7 @@
 ---
 name: create-verify-app
 description: 当任务涉及为项目生成或更新 verify-app 类 skill、让 agent 像用户一样启动和操作 app 并留下证据时使用。探测项目的启动和操作方式，生成项目本地的验证 skill 并亲自跑通。执行一张 ticket 的验收使用 accept。
+disable-model-invocation: true
 ---
 
 # 生成项目验证 skill
