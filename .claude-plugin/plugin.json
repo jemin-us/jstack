@@ -1,6 +1,6 @@
 {
   "name": "jstack",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "个人工程工作流：需求追问、spec、ticket、实现、独立验收。Claude Code 与 Codex 共用。",
   "author": {
     "name": "jemin-us"
