@@ -1,6 +1,7 @@
 ---
 name: architect
 description: 当用户要求设计架构、接口或领域模型，或实现涉及跨模块契约、共享状态、新领域模型和旧 API 迁移时使用。先确定调用方式、类型、状态归属和迁移方案，再交回实现；局部行为修复直接使用 implement。
+disable-model-invocation: true
 ---
 
 # 设计实现边界

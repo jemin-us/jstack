@@ -1,6 +1,7 @@
 ---
 name: codebase-audit
 description: 当用户要求审计代码结构、检查某个目录或模块的代码质量、找出耦合和重复，或问一块代码该怎么重构时使用。只读，输出按修法组织的清单，每个修法写明解决哪些问题、涉及范围、能否配检查。把规则落成检查使用 codebase；动手修改使用 mode；排查具体 bug 使用 diagnosing-bugs。
+disable-model-invocation: true
 ---
 
 # 审计代码结构

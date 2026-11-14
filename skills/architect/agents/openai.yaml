@@ -2,4 +2,4 @@ interface:
   display_name: "设计实现边界"
   short_description: "当用户要求设计架构、接口或领域模型，或实现涉及跨模块契约、共享状态、新领域模型和旧 API 迁移时使用"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

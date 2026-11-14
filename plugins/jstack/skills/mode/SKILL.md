@@ -1,6 +1,6 @@
 ---
 name: mode
-description: 当用户提出泛化的开发请求时使用，例如“加个功能”“改一下这个行为”“修这个 bug”，也用于代码清理、定期重构和基线维护。判断规模和类型后依次调用其他 jstack skill，推进到 PR。请求已指明 ticket 编号、spec 编号或待验收的分支时，使用对应的 implement、`tickets`、accept。
+description: jstack 的统一入口。用户提出开发请求（加功能、改行为、修 bug、清理和重构代码），或只要其中一步（追问需求、写 spec、拆 ticket、实现指明的 ticket、诊断 bug、设计架构、独立验收、开 PR 和跟进 CI、审计代码、把规则落成检查、写 prompt、建或改 skill、暂停和恢复任务、配置项目）时使用。开发请求按 playbook 推进到 PR；单步请求读取对应的 jstack skill 并照做。只问 jstack 怎么用时使用 help。
 ---
 
 # jstack 入口
@@ -9,7 +9,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 - 先读取 [harness](../harness/SKILL.md)，整个会话只读一次。下文的"读取 skill""派 subagent""向用户提问"和 `<jstack 插件目录>` 都按它执行。
 - 开发任务默认做到实现、验证、独立审查、commit、push、PR 和 CI 跟进，不逐步请求继续。合并、发布和不可恢复的数据删除不在默认范围；明确的仅分析、仅本地或禁止提交要求优先。读取技能用于评估不代表已经执行；开始时说明所选路径和交付终点，偏离时说明具体步骤与原因。
-- mode 发起的流程是自动执行：本 skill 读取的 skill，以及它们再读取的 skill，凡写着"自动执行时"的分支都适用。
+- mode 发起的 playbook 是自动执行：本 skill 读取的 skill，以及它们再读取的 skill，凡写着"自动执行时"的分支都适用。单步请求不是自动执行。
 - 自己能跑的检查不交给用户。
 - 写入 GitHub（push、开 PR、创建或修改 issue）前，按 [setup](../setup/SKILL.md) 的"写入 GitHub 前检查账号"一节确认当前 gh 账号有写权限。
 - issue 状态只由 mode 修改，规则和命令见 [references/issue-state.md](references/issue-state.md)。
@@ -17,11 +17,32 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 
 ## 流程
 
-### 1. 选 playbook
+### 1. 选路径
 
-用户要求暂停、恢复或交接时先读取 [session](../session/SKILL.md)，不重启整个开发流程。跨模块契约和领域建模由 implement 调用 [architect](../architect/SKILL.md)。用户要求技能行为评测时读取 [evaluate](../evaluate/SKILL.md)。
+先判断用户要的是其中一步，还是一个开发任务。
 
-根据用户请求，从下表中选一个：
+**单步请求**：读取下表对应的 skill 并照做，到该 skill 的终点结束，不进入 playbook，也不按"自动执行时"的分支压缩交互，例如 brainstorm 照常逐轮追问，diagnosing-bugs 在只要诊断时不修复。
+
+| 请求 | skill |
+|---|---|
+| 暂停、恢复或交接长任务 | [session](../session/SKILL.md) |
+| 把需求问清楚、讨论方案 | [brainstorm](../brainstorm/SKILL.md) |
+| 把讨论结果写成 spec | [spec](../spec/SKILL.md) |
+| 把指明的 spec 拆成 ticket | [tickets](../tickets/SKILL.md) |
+| 实现指明的 ticket，或已讨论清楚的具体改动 | [implement](../implement/SKILL.md) |
+| 只要复现 bug、定位根因 | [diagnosing-bugs](../diagnosing-bugs/SKILL.md) |
+| 只要架构、接口或领域模型的设计 | [architect](../architect/SKILL.md) |
+| 独立验收指明的分支、commit、ticket 或修复 | [accept](../accept/SKILL.md) |
+| 开 PR、查 PR 状态、处理 review、跟进 CI、合并指定 PR | [pr](../pr/SKILL.md) |
+| 审计一块代码的结构，只看不改 | [codebase-audit](../codebase-audit/SKILL.md) |
+| 固定代码基准、把反复出现的错误落成检查 | [codebase](../codebase/SKILL.md) |
+| 写或审查给 agent 读的文字 | [prompt](../prompt/SKILL.md) |
+| 新建、修改或审查 skill | [skill-creator-plus](../skill-creator-plus/SKILL.md) |
+| 在项目里启用 jstack、检查 gh 环境 | [setup](../setup/SKILL.md) |
+| 生成或更新项目的验证 skill | [create-verify-app](../create-verify-app/SKILL.md) |
+| jstack 技能流程的行为评测 | [evaluate](../evaluate/SKILL.md) |
+
+**开发任务**：从下表中选一个 playbook。跨模块契约和领域建模由 implement 调用 architect。
 
 | playbook | 适用 | 执行方式 |
 |---|---|---|
@@ -32,7 +53,7 @@ description: 当用户提出泛化的开发请求时使用，例如“加个功�
 | perf | 有测量依据的性能退化或明确性能目标 | [perf.md](references/playbooks/perf.md) |
 | visual | 按设计、截图或参照调整视觉与交互，包括同一任务内追加的样式反馈 | [visual.md](references/playbooks/visual.md) |
 
-完成标准：向用户说明选了哪个 playbook，并给出一句理由。选 change 时，向用户说明这次交给 implement，最终汇报里也写明由 implement 完成；implement 自己建 worktree、实现，再由 finish 执行 accept、修复闭环、PR 和清理，读取它的 `SKILL.md` 并照做后不再执行下面的步骤。maintenance、perf、visual 按对应 playbook 完成后结束，不重复执行通用收尾。只读调查和服务操作不进入开发交付流程；选用适合的只读技能或直接操作并验证，不为这些任务创建开发 PR。
+完成标准：单步请求已说明读取哪个 skill，并按它执行到终点，不再执行下面的步骤。开发任务已说明选了哪个 playbook，并给出一句理由。选 change 时，向用户说明这次交给 implement，最终汇报里也写明由 implement 完成；implement 自己建 worktree、实现，再由 finish 执行 accept、修复闭环、PR 和清理，读取它的 `SKILL.md` 并照做后不再执行下面的步骤。maintenance、perf、visual 按对应 playbook 完成后结束，不重复执行通用收尾。只读调查和服务操作不进入开发交付流程；选用适合的只读技能或直接操作并验证，不为这些任务创建开发 PR。
 
 ### 2. 准备分支
 

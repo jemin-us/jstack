@@ -1,6 +1,7 @@
 ---
 name: skill-creator-plus
 description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，优化 description 或排查触发问题时使用。按用例确定结构，编写 description 和正文，运行校验脚本并做触发测试。流程行为评测使用 evaluate。
+disable-model-invocation: true
 ---
 
 # Skill 创建与审查

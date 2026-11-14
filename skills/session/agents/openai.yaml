@@ -2,4 +2,4 @@ interface:
   display_name: "任务暂停与恢复"
   short_description: "当用户要求暂停、恢复、交接或继续此前长任务时使用"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false
