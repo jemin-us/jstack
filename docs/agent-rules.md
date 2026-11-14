@@ -15,3 +15,4 @@
 | 全局规则里不写模型本来就会做的事（先读再改、跑测试等） | 两端全局规则 | 无 | 用户拍板：拿不准的都删 | 2026-11-14 |
 | 文风要求写成“不写报告腔”加 NO / OK 例子 | 两端全局规则 | 无 | 用户要求用一个词代替三遍重复 | 2026-11-14 |
 | 不用 Jev / typesafe-ai | ~/.codex/AGENTS.md（已删整节） | — | 用户：Jev 不用了 | 2026-11-14 |
+| 手动调用 skill 的“触发说法”要原样出现在 mode 的 description 里 | skills/mode/SKILL.md | `scripts/validate.py` | 用户第二次纠正：新增 reflect 时漏补，“沉淀一下”没进 mode；reflect 测试提出、用户同意 | 2026-11-14 |
