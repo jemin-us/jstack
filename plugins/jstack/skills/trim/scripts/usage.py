@@ -26,14 +26,28 @@ def hits(names, text):
     return inst, src
 
 
-def claude_counts(names, root):
+def typed_command(line, names, plugin):
+    """用户亲手输入的 /<插件>:<名称>：只看 type 为 user、content 是字符串的消息。"""
+    if '"type":"user"' not in line.replace(" ", "") or "<command-name>" not in line:
+        return set()
+    try:
+        e = json.loads(line)
+    except ValueError:
+        return set()
+    msg = e.get("message")
+    content = msg.get("content") if isinstance(msg, dict) else None
+    if e.get("type") != "user" or not isinstance(content, str):
+        return set()
+    found = re.findall(r"<command-name>/" + re.escape(plugin) + r":([\w-]+)</command-name>", content)
+    return {n for n in found if n in names}
+
+
+def claude_counts(names, root, plugin="jstack"):
     calls, reads, dev = Counter(), Counter(), Counter()
     for f in root.glob("**/*.jsonl"):
         seen, seen_dev, called = set(), set(), set()
         for line in open(f, errors="ignore"):
-            for m in re.finditer(r"<command-name>/?(?:[\w-]+:)?([\w-]+)</command-name>", line):
-                if m.group(1) in names:
-                    called.add(m.group(1))
+            called |= typed_command(line, names, plugin)
             if '"tool_use"' not in line:
                 continue
             try:
@@ -80,9 +94,10 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("names", nargs="+")
     ap.add_argument("--home", default=str(Path.home()))
+    ap.add_argument("--plugin", default="jstack", help="Claude Code 斜杠命令的插件前缀")
     a = ap.parse_args(argv)
     home = Path(a.home)
-    calls, creads, cdev = claude_counts(set(a.names), home / ".claude/projects")
+    calls, creads, cdev = claude_counts(set(a.names), home / ".claude/projects", a.plugin)
     xreads, xdev, xcalls = codex_counts(set(a.names), [home / ".codex/sessions", home / ".codex/archived_sessions"])
     print("| skill | Claude 调用（Skill 工具和 /命令） | Codex 手动调用（$名称） | Claude 读取已安装 | Codex 读取已安装 | 源码路径读取（两端） |\n|---|---|---|---|---|---|")
     for n in sorted(a.names, key=lambda n: -(calls[n] + xcalls[n] + creads[n] + xreads[n])):

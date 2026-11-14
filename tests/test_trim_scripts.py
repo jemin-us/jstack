@@ -54,8 +54,9 @@ class TrimScriptTests(unittest.TestCase):
         self.write("proj/.claude/rules/ts.md", "---\npaths: [\"src/**/*.ts\"]\n---\n")
         self.write("proj/.claude/rules/old.md", "---\npaths: [\"lib/**/*.js\"]\n---\n")
         self.write("proj/.claude/rules/block.md", "---\npaths:\n  - src/**/*.ts\n  - \"lib/**\"\n---\n")
+        self.write("proj/.claude/rules/flat.md", "---\npaths:\n- src/**/*.ts\n- vendor/**\n---\n")
         self.assertEqual(sorted(inventory.dead_globs(self.root / "proj")),
-                         [(".claude/rules/block.md", "lib/**"), (".claude/rules/old.md", "lib/**/*.js")])
+                         [(".claude/rules/block.md", "lib/**"), (".claude/rules/flat.md", "vendor/**"), (".claude/rules/old.md", "lib/**/*.js")])
 
     def test_usage_ignores_injected_paths_and_splits_installed(self):
         injected = {"type": "user", "message": {"content": "可用 skill：/x/plugins/jstack/skills/spec/SKILL.md"}}
@@ -65,9 +66,12 @@ class TrimScriptTests(unittest.TestCase):
                     "input": {"file_path": "/repo/skills/accept/SKILL.md"}}]}}
         call = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "jstack:mode"}}]}}
         self.write("home/.claude/projects/p/a.jsonl", "\n".join(json.dumps(e) for e in [injected, read_inst, read_src, call]))
-        self.write("home/.claude/projects/p/b.jsonl", json.dumps({"type": "user", "message": {"content": "<command-name>/jstack:accept</command-name>"}}))
-        calls, reads, dev = usage.claude_counts({"spec", "accept", "mode"}, self.root / "home/.claude/projects")
-        self.assertEqual((calls["mode"], calls["accept"], reads["accept"], dev["accept"], reads["spec"]), (1, 1, 1, 1, 0))
+        self.write("home/.claude/projects/p/b.jsonl", "\n".join(json.dumps(e) for e in [
+            {"type": "user", "message": {"content": "<command-name>/jstack:accept</command-name>"}},
+            {"type": "user", "message": {"content": "<command-name>/help</command-name>"}},
+            {"type": "user", "message": {"content": [{"type": "tool_result", "content": "<command-name>/jstack:spec</command-name>"}]}}]))
+        calls, reads, dev = usage.claude_counts({"spec", "accept", "mode", "help"}, self.root / "home/.claude/projects")
+        self.assertEqual((calls["mode"], calls["accept"], calls["help"], calls["spec"], reads["accept"], dev["accept"], reads["spec"]), (1, 1, 0, 0, 1, 1, 0))
         self.write("home/.codex/sessions/r.jsonl", "\n".join([
             '{"type":"session_meta","instructions":"/u/.codex/plugins/cache/jstack/skills/tickets/SKILL.md"}',
             '{"type":"function_call","arguments":"cat /u/.codex/plugins/cache/jstack/skills/accept/SKILL.md"}',

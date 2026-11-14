@@ -56,7 +56,7 @@ def paths_globs(fm):
             return [s for s in items if s]
         items = []
         for nxt in lines[i + 1:]:
-            b = re.match(r"^\s+-\s*(.+)$", nxt)
+            b = re.match(r"^\s*-\s*(.+)$", nxt)
             if not b:
                 break
             items.append(b.group(1).strip().strip("\"'"))

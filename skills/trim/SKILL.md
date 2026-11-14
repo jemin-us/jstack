@@ -48,7 +48,7 @@ trim 下线一行时，写明理由：机制已经接管，或新模型实测不
 
 运行 `python3 <本 skill 目录>/scripts/inventory.py --project <项目> --skills <skill 根目录>`，得到每轮加载内容的字符数。再读按需加载的部分：各 skill 正文、`references/`、`docs/`。臃肿的内容先看是不是放错了位置，再看是不是写多了。
 
-判断一个 skill 有没有人用，运行 `python3 <本 skill 目录>/scripts/usage.py <skill 名> ...`，它只认工具调用；按名字 grep 会话全文不算证据。调用 0 次的 skill 先查是否被其他 skill 按路径读取。
+判断一个 skill 有没有人用，运行 `python3 <本 skill 目录>/scripts/usage.py <skill 名> ...`，它按会话统计用户亲手输入的调用和读取 SKILL.md 的工具调用；按名字 grep 会话全文不算证据。调用 0 次的 skill 先查是否被其他 skill 按路径读取。
 
 完成标准：每个每轮加载的来源都有字符数；每个 skill 都有调用数据，或写明没有记录。
 
@@ -121,7 +121,7 @@ trim 下线一行时，写明理由：机制已经接管，或新模型实测不
 
 现象：usage 显示每个 skill 都被用过十几次。
 原因：按名字 grep 了会话全文；Codex 会把所有 skill 的路径注入每个会话。
-处理：只用 usage.py 的结果，它只统计工具调用。
+处理：只用 usage.py 的结果，它只统计用户输入的调用和工具调用。
 
 现象：读取 `~/.codex/AGENTS.md` 等仓库外文件被拒绝。
 原因：当前权限只允许工作目录。
