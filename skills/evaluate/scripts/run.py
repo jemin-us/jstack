@@ -5,6 +5,7 @@ from datetime import date, timedelta
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import signal
@@ -285,6 +286,13 @@ def key_path(data, header):
     return path
 
 
+def flush(pending, kept, inside, after_dropped):
+    """条目内部的注释和空行随条目删除；紧跟被删条目的空行删除；其余注释（例如写给下一个表的）保留。"""
+    if inside:
+        return
+    kept.extend(chunk for chunk in pending if not (after_dropped and not chunk.strip()))
+
+
 def without_projects(data, targets):
     """去掉目标工作区后的期望配置；projects 变空时视同不存在。"""
     data = dict(data)
@@ -306,30 +314,44 @@ def forget_trust(workspace):
     config = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'config.toml'
     if not config.is_file():
         return False
-    with config.open(newline='') as handle:
-        text = handle.read()
+    try:
+        with config.open(encoding='utf-8', newline='') as handle:
+            text = handle.read()
+    except UnicodeDecodeError:
+        return False  # TOML 必须是 UTF-8，读不了就不动
     original = parse_toml(text)
     targets = {str(workspace), str(Path(workspace).resolve())}
     projects = original.get('projects') if original else None
     if not isinstance(projects, dict) or not targets & projects.keys():
         return False
-    kept, table = [], []
-    for chunk in statements(text.splitlines(keepends=True)):
+    # 只按 \n 切行：splitlines 还会在注释允许出现的 U+2028 等字符处切断。
+    chunks = list(statements([line for line in re.split(r'(?<=\n)', text) if line]))
+    kept, pending, table, dropped = [], [], [], False
+    for chunk in chunks:
+        data = parse_toml(chunk)
         header = chunk.lstrip().startswith('[')
-        path = key_path(parse_toml(chunk), header)
+        if not data and not header:
+            pending.append(chunk)  # 空行和整行注释，等下一条语句决定归属
+            continue
+        path = key_path(data, header)
         if header:
             table = full = path
         else:
             full = table + path
-        if not (len(full) >= 2 and full[0] == 'projects' and full[1] in targets):
+        drop = len(full) >= 2 and full[0] == 'projects' and full[1] in targets
+        flush(pending, kept, inside=drop and not header, after_dropped=dropped)
+        if not drop:
             kept.append(chunk)
+        pending, dropped = [], drop
+    flush(pending, kept, inside=False, after_dropped=dropped)
     result = ''.join(kept)
     after = parse_toml(result)
-    if after is None or without_projects(after, targets) != without_projects(original, targets) \
+    if ''.join(chunks) != text or after is None \
+            or without_projects(after, targets) != without_projects(original, targets) \
             or targets & (after.get('projects') or {}).keys():
         print(f'未清理 {config}：{workspace} 的条目无法单独删除，请手动处理', file=sys.stderr)
         return False
-    with config.open('w', newline='') as handle:
+    with config.open('w', encoding='utf-8', newline='') as handle:
         handle.write(result)
     return True
 

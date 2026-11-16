@@ -302,6 +302,20 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(text,'model = "m"\r\n[features]\r\nx = 1\r\n')
 
+    def test_forget_trust_keeps_comments_that_are_not_inside_the_entry(self):
+        ok,text=self.forget_in('# a\u2028b\n\n# about WS\n[projects."WS"]\nt = 1\n# inside\nu = 2\n\n# before b\n[projects."/x/b"]\nt = 1\n# tail\n')
+        self.assertTrue(ok)
+        ws=str((self.root/'workspace-a'/'project').resolve())
+        self.assertEqual(text,f'# a\u2028b\n\n# about {ws}\n# before b\n[projects."/x/b"]\nt = 1\n# tail\n')
+
+    def test_forget_trust_skips_config_that_is_not_utf8(self):
+        home=self.root/'codex-home'; home.mkdir()
+        config=home/'config.toml'; data='# caf\u00e9\n[projects."/w/a"]\nt = 1\n'.encode('latin-1')
+        config.write_bytes(data)
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertFalse(runner.forget_trust('/w/a'))
+        self.assertEqual(config.read_bytes(),data)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
