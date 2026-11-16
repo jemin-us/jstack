@@ -14,6 +14,9 @@ import time
 
 from cases import CASES
 
+# Claude 默认要审批 Bash；开沙箱后自动放行，写入仍限于工作区，与 Codex workspace-write 对等。
+CLAUDE_SANDBOX = json.dumps({'sandbox': {'enabled': True, 'autoAllowBashIfSandboxed': True}})
+
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -25,10 +28,11 @@ def git(workspace, *args):
 
 def command(client, workspace, response):
     if client == 'codex':
-        return ['codex', 'exec', '--ephemeral', '--sandbox', 'workspace-write', '--json',
+        # 不加 --ephemeral：它不写 rollout，spawn_agent 会以 no rollout found 失败。
+        return ['codex', 'exec', '--sandbox', 'workspace-write', '--json',
                 '-C', str(workspace), '-o', str(response), '-']
     return ['claude', '-p', '--output-format', 'stream-json', '--verbose',
-            '--permission-mode', 'acceptEdits']
+            '--permission-mode', 'acceptEdits', '--settings', CLAUDE_SANDBOX]
 
 
 def execute(argv, cwd, stdout_path, stderr_path, timeout, prompt=None):
@@ -71,6 +75,11 @@ def prepare(case, source, root):
     (workspace/'.git/info/exclude').write_text('.agents/\n.claude/\n__pycache__/\n*.pyc\n')
     git(workspace, 'add', '.')
     git(workspace, '-c', 'user.name=Local Runner', '-c', 'user.email=runner@example.invalid', 'commit', '-qm', 'Initial project')
+    # 验收类场景的待验收改动留在工作区，不提交。
+    for name, content in case.get('changes', {}).items():
+        path = workspace/name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
     return workspace
 
 
@@ -120,7 +129,75 @@ def independent_reviewers(events, client):
     return sorted(completed)
 
 
-def event_summary(path, client):
+COLLAB_TOOLS = {'spawn_agent', 'wait_agent', 'send_message', 'list_agents', 'interrupt_agent', 'close_agent'}
+
+
+def child_ran_tools(records):
+    """子线程开头是继承的父线程历史，只看 subagent_history_start_ordinal 之后的实际工具调用。"""
+    meta = records[0].get('payload', {}) if records and records[0].get('type') == 'session_meta' else {}
+    start = int(meta.get('subagent_history_start_ordinal') or 0)
+    called, answered = set(), set()
+    for record in records[start:]:
+        payload = record.get('payload') if isinstance(record, dict) else None
+        if record.get('type') != 'response_item' or not isinstance(payload, dict):
+            continue
+        if payload.get('type') in ('function_call', 'custom_tool_call') and payload.get('name') not in COLLAB_TOOLS:
+            called.add(payload.get('call_id'))
+        elif payload.get('type') in ('function_call_output', 'custom_tool_call_output'):
+            answered.add(payload.get('call_id'))
+    return bool(called & answered)
+
+
+def rollout_reviewers(records, children):
+    """Codex 新版只在 rollout 里记录派发与 FINAL_ANSWER；子线程须有自己实际执行的工具调用。"""
+    calls, spawned, completed = set(), set(), set()
+    for record in records:
+        payload = record.get('payload') if isinstance(record, dict) else None
+        if record.get('type') != 'response_item' or not isinstance(payload, dict):
+            continue
+        if payload.get('type') == 'function_call' and payload.get('name') == 'spawn_agent' and payload.get('call_id'):
+            calls.add(payload['call_id'])
+        elif payload.get('type') == 'function_call_output' and payload.get('call_id') in calls:
+            try:
+                name = json.loads(payload.get('output') or '').get('task_name')
+            except (json.JSONDecodeError, AttributeError):
+                name = None
+            if name:
+                spawned.add(name)
+        elif payload.get('type') == 'agent_message' and payload.get('author') in spawned:
+            text = ''.join(block.get('text', '') for block in payload.get('content') or [] if isinstance(block, dict))
+            answer = text.split('Payload:', 1)[1].strip() if 'Payload:' in text else ''
+            if 'FINAL_ANSWER' in text and answer and child_ran_tools(children.get(payload['author'], [])):
+                completed.add(payload['author'])
+    return completed
+
+
+def read_jsonl(path):
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def find_rollouts(events):
+    """按 thread.started 的 id 找 Codex 父 rollout 和 parent_thread_id 指向它的子 rollout；找不到时不推断成功。"""
+    thread = next((e.get('thread_id') for e in events if e.get('type') == 'thread.started' and e.get('thread_id')), None)
+    if not thread:
+        return None, {}
+    sessions = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'sessions'
+    parent = next(iter(sorted(sessions.glob(f'*/*/*/rollout-*-{thread}.jsonl'))), None)
+    children = {}
+    if parent:
+        for path in sorted(parent.parent.glob('rollout-*.jsonl')):
+            with path.open() as handle:
+                first = handle.readline()
+            try:
+                meta = json.loads(first).get('payload', {})
+            except json.JSONDecodeError:
+                continue
+            if meta.get('parent_thread_id') == thread and meta.get('agent_path'):
+                children[meta['agent_path']] = path
+    return parent, children
+
+
+def event_summary(path, client, rollout=None, children=None):
     """只接受客户端完整事件流；统计只用于证据索引，不判定任务成功。"""
     events=[json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     if not events or any(not isinstance(event,dict) for event in events):
@@ -142,7 +219,10 @@ def event_summary(path, client):
             if isinstance(blocks,list):
                 tools+=sum(isinstance(block,dict) and block.get('type')=='tool_use' for block in blocks)
         usage=terminal[-1].get('usage')
-    return {'events':len(events),'tool_events':tools,'usage':usage, 'independent_reviewers':independent_reviewers(events,client)}
+    reviewers = set(independent_reviewers(events,client))
+    if rollout is not None:
+        reviewers |= rollout_reviewers(read_jsonl(rollout), {name: read_jsonl(child) for name, child in (children or {}).items()})
+    return {'events':len(events),'tool_events':tools,'usage':usage, 'independent_reviewers':sorted(reviewers)}
 
 
 def source_digest(workspace):
@@ -166,6 +246,24 @@ def preserve_files(workspace, destination):
             target.with_name(target.name+'.symlink.txt').write_text(os.readlink(path))
         elif path.is_file() and not any(workspace.joinpath(*Path(name).parts[:index]).is_symlink() for index in range(1,len(Path(name).parts))):
             shutil.copyfile(path,target)
+
+
+def forget_trust(workspace):
+    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的那一段，其余配置原样保留。"""
+    config = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'config.toml'
+    if not config.is_file():
+        return False
+    headers = {f'[projects."{path}"]' for path in (str(workspace), str(Path(workspace).resolve()))}
+    kept, skipping, changed = [], False, False
+    for line in config.read_text().splitlines(keepends=True):
+        if line.startswith('['):
+            skipping = line.strip() in headers
+            changed |= skipping
+        if not skipping:
+            kept.append(line)
+    if changed:
+        config.write_text(''.join(kept))
+    return changed
 
 
 def run_case(case_name, client, source, destination, timeout):
@@ -214,7 +312,16 @@ def run_case(case_name, client, source, destination, timeout):
         if not events.stat().st_size or not (destination/'response.txt').is_file():
             result['reason'] = '缺少事件或最终回复证据'
             return result
-        result['events'] = event_summary(events,client)
+        rollout, children = None, {}
+        if client == 'codex':
+            found, found_children = find_rollouts(read_jsonl(events))
+            if found:
+                rollout = destination/'rollout.jsonl'
+                shutil.copyfile(found, rollout)
+            for index, (name, path) in enumerate(sorted(found_children.items())):
+                children[name] = destination/f'rollout-child-{index+1}.jsonl'
+                shutil.copyfile(path, children[name])
+        result['events'] = event_summary(events,client,rollout,children)
         failures = objective(case,workspace,before)
         for index, argv in enumerate(case['checks']):
             state = execute(argv, workspace, destination/f'check-{index}.stdout', destination/f'check-{index}.stderr', 30)
@@ -244,6 +351,11 @@ def run_case(case_name, client, source, destination, timeout):
         except (OSError, subprocess.SubprocessError):
             result['reason'] += '; Git 状态无法获取'
             result['status'] = 'BLOCKED'
+        if client == 'codex':
+            try:
+                result['trust_entry_removed'] = forget_trust(workspace)
+            except OSError:
+                result['trust_entry_removed'] = False
         (destination/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
 
 

@@ -1,6 +1,6 @@
 # 运行行为评测
 
-脚本仅使用 Python 标准库、Git 和已安装且已登录的客户端。不会安装客户端或创建 API key。候选项目没有远端；本地范围写在项目指令中，但这不是操作系统级的网络隔离。运行前使用测试账号或客户端沙箱，不能向候选提供生产凭据。不要用绕过权限的参数。
+脚本仅使用 Python 标准库、Git 和已安装且已登录的客户端。Codex 不加 `--ephemeral`，否则不写 rollout，subagent 无法启动；因此每次运行会在用户的 Codex 会话目录留下 rollout。Codex 把临时工作区记为 trusted 项目，脚本在运行结束后从 `config.toml` 删掉本次工作区那一段，其余配置不动。Claude 通过 `--settings` 开沙箱并自动放行 Bash，写入限于工作区。不会安装客户端或创建 API key。候选项目没有远端；本地范围写在项目指令中，但这不是操作系统级的网络隔离。运行前使用测试账号或客户端沙箱，不能向候选提供生产凭据。不要用绕过权限的参数。
 
 ```bash
 python3 skills/evaluate/scripts/run.py --list
@@ -10,7 +10,7 @@ python3 skills/evaluate/scripts/run.py --client claude --case all --source "$PWD
 
 从已安装插件执行时，把脚本路径换成本 skill 的绝对路径；source 指向要评测的 jstack 源码。省略 source 可做不注入项目技能的对照，但用户级配置或已安装插件仍可能生效；记录这些污染，不能称为完全隔离的无技能基线。客户端不会被脚本切换模型。
 
-覆盖八类任务：局部视觉修复、开发身份入口、偶发任务丢失、旧 API 迁移、基线收紧、只读分析、本地 CI 失败、生产验收受阻。最后两类验证错误处理与报告边界，不连接真实 GitHub CI 或支付网关。
+覆盖九类任务：局部视觉修复、开发身份入口、偶发任务丢失、旧 API 迁移、基线收紧、只读分析、本地 CI 失败、生产验收受阻、高风险改动验收。最后两类验证错误处理与报告边界，不连接真实 GitHub CI 或支付网关。
 
 每次结果包含客户端版本、命令、真实 JSONL 事件、stderr、最终回复、外部检查输出、Git 差异和保留的工作区路径。任务文件和技能放进候选目录；判据只在协调者脚本中，不加入候选提示，复制技能时排除 evaluate 自身及判据。原始日志可能含用户配置产生的信息，外发前必须审查脱敏。
 
@@ -23,4 +23,4 @@ python3 skills/evaluate/scripts/run.py --client claude --case all --source "$PWD
 
 复制匿名任务、产物、客观结果和工具记录给非作者审查者；不提供模型标签和候选自评。最终回复仅作为报告准确性的被检查对象。保留每次失败，不覆盖同名结果目录。清理工作区前确认结果目录里的证据足以复查；有未跟踪产物时一并保存。
 
-事件解析目前支持 Codex 的 spawn_agent/agents_states 完成记录，以及 Claude 同步 Agent/Task 的匹配工具结果。未识别到的后台或其他独立渠道标为证据不足，不推断它们已成功；适配其他事件格式须用真实脱敏样本补回归后再放行。
+事件解析支持 Codex 旧版输出流里的 spawn_agent/agents_states 完成记录、Codex 新版 rollout（按 thread.started 的 id 在 `$CODEX_HOME/sessions` 下查找，复制为结果目录的 rollout.jsonl）里 spawn_agent 返回的 task_name、该子 agent 的 FINAL_ANSWER，以及子线程 rollout（`parent_thread_id` 指向父线程，复制为 rollout-child-*.jsonl）在 `subagent_history_start_ordinal` 之后至少一次有输出的非协作工具调用，以及 Claude 同步 Agent/Task 的匹配工具结果。未识别到的后台或其他独立渠道标为证据不足，不推断它们已成功；适配其他事件格式须用真实脱敏样本补回归后再放行。

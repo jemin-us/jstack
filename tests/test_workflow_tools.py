@@ -95,6 +95,17 @@ class RunnerTests(unittest.TestCase):
         (work/'status.py').unlink()
         self.assertTrue(runner.objective(case,work,before))
 
+    def test_acceptance_case_leaves_change_uncommitted_and_protected(self):
+        case=CASES['accept-risky']
+        work=runner.prepare(case,None,self.root)
+        self.assertEqual(runner.git(work,'status','--porcelain').strip(),'M ledger.py')
+        self.assertEqual((work/'ledger.py').read_text(),case['changes']['ledger.py'])
+        before={'head':runner.git(work,'rev-parse','HEAD').strip(),'branch':runner.git(work,'branch','--show-current').strip(),
+                'protected':{'ledger.py':runner.digest(work/'ledger.py')}}
+        self.assertEqual(runner.objective(case,work,before),[])
+        (work/'ledger.py').write_text(case['files']['ledger.py'])
+        self.assertTrue(runner.objective(case,work,before))
+
     def test_success_claim_cannot_pass_broken_artifact(self):
         # 假客户端仅覆盖判据失败处理，结果绝不算模型实测。
         fake=self.root/'codex'
@@ -146,6 +157,78 @@ class RunnerTests(unittest.TestCase):
         spawned=call('spawn_agent',['child'])
         self.assertEqual(runner.independent_reviewers([spawned,empty],'codex'),[])
         self.assertEqual(runner.independent_reviewers([spawned,done],'codex'),['child'])
+
+    @staticmethod
+    def codex_child(agent_path, own_tools, inherited_tools=()):
+        # 结构取自 codex-cli 0.169 的真实子线程 rollout：开头继承父线程历史，ordinal 之后才是子 agent 自己的记录。
+        def item(payload): return {'type':'response_item','payload':payload}
+        inherited=[item({'type':'custom_tool_call','name':name,'call_id':f'p{i}'}) for i,name in enumerate(inherited_tools)]
+        inherited+=[item({'type':'custom_tool_call_output','call_id':f'p{i}'}) for i,_ in enumerate(inherited_tools)]
+        start=1+len(inherited)
+        meta={'type':'session_meta','payload':{'parent_thread_id':'t1','agent_path':agent_path,'subagent_history_start_ordinal':start}}
+        own=[]
+        for i,name in enumerate(own_tools):
+            own+=[item({'type':'custom_tool_call','name':name,'call_id':f'o{i}'}),item({'type':'custom_tool_call_output','call_id':f'o{i}'})]
+        return [meta,*inherited,*own]
+
+    def test_codex_rollout_completion_requires_spawn_answer_and_child_tool_run(self):
+        # 结构取自 codex-cli 0.169 的真实 rollout，已删去提示词与密文。
+        def item(payload): return {'type':'response_item','payload':payload}
+        spawn=item({'type':'function_call','name':'spawn_agent','call_id':'c1','arguments':'{}'})
+        output=item({'type':'function_call_output','call_id':'c1','output':'{"task_name":"/root/review"}'})
+        def answer(author, payload): return item({'type':'agent_message','author':author,'recipient':'/root',
+            'content':[{'type':'input_text','text':f'Message Type: FINAL_ANSWER\nTask name: /root\nSender: {author}\nPayload:\n{payload}'}]})
+        ran={'/root/review':self.codex_child('/root/review',['exec'])}
+        self.assertEqual(runner.rollout_reviewers([spawn,output,answer('/root/review','FAIL')],ran),{'/root/review'})
+        self.assertEqual(runner.rollout_reviewers([spawn,answer('/root/review','FAIL')],ran),set())
+        self.assertEqual(runner.rollout_reviewers([spawn,output,answer('/root/other','FAIL')],ran),set())
+        self.assertEqual(runner.rollout_reviewers([spawn,output,answer('/root/review','')],ran),set())
+        failed=item({'type':'function_call_output','call_id':'c1','output':'collab spawn failed: no rollout found'})
+        self.assertEqual(runner.rollout_reviewers([spawn,failed,answer('/root/review','FAIL')],ran),set())
+        # 子线程缺失、只有协作工具、只有继承来的父线程调用，都不能证明子 agent 实际执行过。
+        self.assertEqual(runner.rollout_reviewers([spawn,output,answer('/root/review','FAIL')],{}),set())
+        idle={'/root/review':self.codex_child('/root/review',['wait_agent'],inherited_tools=['exec'])}
+        self.assertEqual(runner.rollout_reviewers([spawn,output,answer('/root/review','FAIL')],idle),set())
+
+    def test_codex_rollouts_are_found_by_thread_and_merged_into_summary(self):
+        home=self.root/'codex-home'; day=home/'sessions/2026/11/15'; day.mkdir(parents=True)
+        def write(path, records): path.write_text('\n'.join(json.dumps(x) for x in records)+'\n'); return path
+        rollout=write(day/'rollout-2026-11-15T00-00-00-t1.jsonl',[
+            {'type':'session_meta','payload':{'id':'t1'}},
+            {'type':'response_item','payload':{'type':'function_call','name':'spawn_agent','call_id':'c1'}},
+            {'type':'response_item','payload':{'type':'function_call_output','call_id':'c1','output':'{"task_name":"/root/r"}'}},
+            {'type':'response_item','payload':{'type':'agent_message','author':'/root/r','content':[{'type':'input_text','text':'FINAL_ANSWER\nPayload:\nok'}]}}])
+        child=write(day/'rollout-2026-11-15T00-00-01-t2.jsonl',self.codex_child('/root/r',['exec']))
+        write(day/'rollout-2026-11-15T00-00-02-t3.jsonl',[{'type':'session_meta','payload':{'parent_thread_id':'other','agent_path':'/root/x'}}])
+        events=self.root/'events.jsonl'
+        events.write_text('{"type":"thread.started","thread_id":"t1"}\n{"type":"turn.completed","usage":{}}\n')
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            found,children=runner.find_rollouts([{'type':'thread.started','thread_id':'t1'}])
+            self.assertEqual((found,children),(rollout,{'/root/r':child}))
+            self.assertEqual(runner.find_rollouts([{'type':'thread.started','thread_id':'missing'}]),(None,{}))
+        self.assertEqual(runner.event_summary(events,'codex',rollout,children)['independent_reviewers'],['/root/r'])
+        self.assertEqual(runner.event_summary(events,'codex',rollout)['independent_reviewers'],[])
+        self.assertEqual(runner.event_summary(events,'codex')['independent_reviewers'],[])
+
+    def test_forget_trust_removes_only_this_workspace_section(self):
+        home=self.root/'codex-home'; home.mkdir()
+        work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
+        other='[projects."/x/workspace-b/project"]\ntrust_level = "trusted"\n'
+        config=home/'config.toml'
+        config.write_text(f'model = "m"\n\n[projects."{work.resolve()}"]\ntrust_level = "trusted"\n\n{other}[features]\nmulti_agent_v2 = true\n')
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertTrue(runner.forget_trust(work))
+            self.assertEqual(config.read_text(),f'model = "m"\n\n{other}[features]\nmulti_agent_v2 = true\n')
+            self.assertFalse(runner.forget_trust(work))
+            self.assertFalse(runner.forget_trust(self.root/'missing'))
+
+    def test_client_commands_keep_rollout_and_sandbox_bash(self):
+        codex=runner.command('codex',self.root,self.root/'r.txt')
+        self.assertNotIn('--ephemeral',codex)
+        claude=runner.command('claude',self.root,self.root/'r.txt')
+        settings=json.loads(claude[claude.index('--settings')+1])
+        self.assertTrue(settings['sandbox']['enabled'] and settings['sandbox']['autoAllowBashIfSandboxed'])
+        self.assertNotIn('bypassPermissions',claude)
 
     def test_claude_independent_completion_rejects_errors_background_and_unmatched(self):
         call={'message':{'content':[{'type':'tool_use','name':'Agent','id':'a','input':{}}]}}
