@@ -287,10 +287,13 @@ def key_path(data, header):
 
 
 def flush(pending, kept, inside, after_dropped):
-    """条目内部的注释和空行随条目删除；紧跟被删条目的空行删除；其余注释（例如写给下一个表的）保留。"""
+    """夹在两段被删内容之间的注释和空行一起删；被删内容后紧跟的连续空行删；其余原样保留。"""
     if inside:
         return
-    kept.extend(chunk for chunk in pending if not (after_dropped and not chunk.strip()))
+    start = 0
+    while after_dropped and start < len(pending) and not pending[start].strip():
+        start += 1
+    kept.extend(pending[start:])
 
 
 def without_projects(data, targets):
@@ -318,10 +321,13 @@ def forget_trust(workspace):
         with config.open(encoding='utf-8', newline='') as handle:
             text = handle.read()
     except UnicodeDecodeError:
-        return False  # TOML 必须是 UTF-8，读不了就不动
-    original = parse_toml(text)
+        text = None  # TOML 必须是 UTF-8
+    original = parse_toml(text) if text is not None else None
+    if original is None:
+        print(f'未清理 {config}：不是 UTF-8 或无法解析为 TOML，请手动处理', file=sys.stderr)
+        return False
     targets = {str(workspace), str(Path(workspace).resolve())}
-    projects = original.get('projects') if original else None
+    projects = original.get('projects')
     if not isinstance(projects, dict) or not targets & projects.keys():
         return False
     # 只按 \n 切行：splitlines 还会在注释允许出现的 U+2028 等字符处切断。
@@ -339,7 +345,7 @@ def forget_trust(workspace):
         else:
             full = table + path
         drop = len(full) >= 2 and full[0] == 'projects' and full[1] in targets
-        flush(pending, kept, inside=drop and not header, after_dropped=dropped)
+        flush(pending, kept, inside=dropped and drop and not header, after_dropped=dropped)
         if not drop:
             kept.append(chunk)
         pending, dropped = [], drop

@@ -316,6 +316,22 @@ class RunnerTests(unittest.TestCase):
             self.assertFalse(runner.forget_trust('/w/a'))
         self.assertEqual(config.read_bytes(),data)
 
+    def test_forget_trust_only_drops_comments_between_removed_lines(self):
+        cases={'x = 1\n# about x2\nprojects."WS".t = 1\nx2 = 1\n':'x = 1\n# about x2\nx2 = 1\n',
+               '[projects]\n"/x/b".t = 1\n# note about b\n\n"WS".t = 1\n':'[projects]\n"/x/b".t = 1\n# note about b\n\n',
+               '[projects."WS"]\nt = 1\n\n# about y\n\n[y]\nz = 1\n':'# about y\n\n[y]\nz = 1\n'}
+        for before,after in cases.items():
+            ok,text=self.forget_in(before)
+            self.assertTrue(ok, before)
+            self.assertEqual(text, after, before)
+
+    def test_forget_trust_reports_unreadable_config(self):
+        for data in ('[projects."/w/a"]\nt = \n'.encode(), '# caf\u00e9\n'.encode('latin-1')):
+            home=self.root/'codex-home'; home.mkdir(exist_ok=True); (home/'config.toml').write_bytes(data)
+            with patch.dict('os.environ',{'CODEX_HOME':str(home)}), patch('sys.stderr') as err:
+                self.assertFalse(runner.forget_trust('/w/a'))
+            self.assertIn('未清理', ''.join(call.args[0] for call in err.write.call_args_list), data)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
