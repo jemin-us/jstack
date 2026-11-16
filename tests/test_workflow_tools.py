@@ -228,6 +228,25 @@ class RunnerTests(unittest.TestCase):
         with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
             self.assertEqual(runner.find_rollouts([{'type':'thread.started','thread_id':'t1'}]),(parent,{'/root/r':child}))
 
+    def test_codex_rollout_on_last_representable_day_does_not_crash(self):
+        home=self.root/'codex-home'; day=home/'sessions/9999/12/31'; day.mkdir(parents=True)
+        parent=day/'rollout-a-t1.jsonl'; parent.write_text('{"type":"session_meta","payload":{"id":"t1"}}\n')
+        child=day/'rollout-b-t2.jsonl'
+        child.write_text(json.dumps({'type':'session_meta','payload':{'parent_thread_id':'t1','agent_path':'/root/r'}})+'\n')
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertEqual(runner.find_rollouts([{'type':'thread.started','thread_id':'t1'}]),(parent,{'/root/r':child}))
+
+    def test_forget_trust_accepts_other_valid_toml_header_spellings(self):
+        home=self.root/'codex-home'; home.mkdir()
+        work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
+        path=str(work.resolve()); config=home/'config.toml'
+        tail='[projects."/x/workspace-b/project"]\ntrust_level = "trusted"\n'
+        for header in (f"[projects.'{path}']", f'[ projects . "{path}" ]  # 临时', f'  [projects."{path}"]'):
+            config.write_text(f'model = "m"\n{header}\ntrust_level = "trusted"\n[projects."{path}".extra]\nx = 1\n{tail}')
+            with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+                self.assertTrue(runner.forget_trust(work), header)
+                self.assertEqual(config.read_text(),f'model = "m"\n{tail}', header)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
