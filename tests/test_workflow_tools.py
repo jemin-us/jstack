@@ -268,6 +268,70 @@ class RunnerTests(unittest.TestCase):
             self.assertFalse(runner.forget_trust(work))
             self.assertEqual(config.read_text(),text)
 
+    def forget_in(self, text, binary=False):
+        home=self.root/'codex-home'; home.mkdir(exist_ok=True)
+        work=self.root/'workspace-a'/'project'; work.mkdir(parents=True, exist_ok=True)
+        text=text.replace('WS',str(work.resolve())); config=home/'config.toml'
+        config.write_bytes(text.encode())
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            return runner.forget_trust(work), config.read_bytes().decode()
+
+    def test_forget_trust_removes_dotted_and_inline_forms(self):
+        other='[projects."/x/b"]\ntrust_level = "trusted"\n'
+        forms=['[projects]\n"WS".trust_level = "trusted"\n',
+               '[projects]\n"WS" = { trust_level = "trusted" }\n',
+               'projects."WS".trust_level = "trusted"\n']
+        ok,text=self.forget_in('model = "m"\nprojects = { "WS" = { trust_level = "trusted" } }\n[features]\nx = 1\n')
+        self.assertTrue(ok)
+        self.assertEqual(text,'model = "m"\n[features]\nx = 1\n')
+        for form in forms:
+            ok,text=self.forget_in('model = "m"\n'+form+other)
+            self.assertTrue(ok, form)
+            self.assertNotIn(str((self.root/'workspace-a'/'project').resolve()), text, form)
+            self.assertIn(other, text, form)
+            self.assertEqual(runner.tomllib.loads(text)['projects'], {'/x/b':{'trust_level':'trusted'}}, form)
+
+    def test_forget_trust_leaves_shared_inline_table_untouched(self):
+        text='projects = { "WS" = { trust_level = "trusted" }, "/x/b" = { trust_level = "trusted" } }\n'
+        ok,after=self.forget_in(text)
+        self.assertFalse(ok)
+        self.assertEqual(after, text.replace('WS',str((self.root/'workspace-a'/'project').resolve())))
+
+    def test_forget_trust_keeps_crlf_line_endings(self):
+        ok,text=self.forget_in('model = "m"\r\n[projects."WS"]\r\ntrust_level = "trusted"\r\n[features]\r\nx = 1\r\n')
+        self.assertTrue(ok)
+        self.assertEqual(text,'model = "m"\r\n[features]\r\nx = 1\r\n')
+
+    def test_forget_trust_keeps_comments_that_are_not_inside_the_entry(self):
+        ok,text=self.forget_in('# a\u2028b\n\n# about WS\n[projects."WS"]\nt = 1\n# inside\nu = 2\n\n# before b\n[projects."/x/b"]\nt = 1\n# tail\n')
+        self.assertTrue(ok)
+        ws=str((self.root/'workspace-a'/'project').resolve())
+        self.assertEqual(text,f'# a\u2028b\n\n# about {ws}\n# before b\n[projects."/x/b"]\nt = 1\n# tail\n')
+
+    def test_forget_trust_skips_config_that_is_not_utf8(self):
+        home=self.root/'codex-home'; home.mkdir()
+        config=home/'config.toml'; data='# caf\u00e9\n[projects."/w/a"]\nt = 1\n'.encode('latin-1')
+        config.write_bytes(data)
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertFalse(runner.forget_trust('/w/a'))
+        self.assertEqual(config.read_bytes(),data)
+
+    def test_forget_trust_only_drops_comments_between_removed_lines(self):
+        cases={'x = 1\n# about x2\nprojects."WS".t = 1\nx2 = 1\n':'x = 1\n# about x2\nx2 = 1\n',
+               '[projects]\n"/x/b".t = 1\n# note about b\n\n"WS".t = 1\n':'[projects]\n"/x/b".t = 1\n# note about b\n\n',
+               '[projects."WS"]\nt = 1\n\n# about y\n\n[y]\nz = 1\n':'# about y\n\n[y]\nz = 1\n'}
+        for before,after in cases.items():
+            ok,text=self.forget_in(before)
+            self.assertTrue(ok, before)
+            self.assertEqual(text, after, before)
+
+    def test_forget_trust_reports_unreadable_config(self):
+        for data in ('[projects."/w/a"]\nt = \n'.encode(), '# caf\u00e9\n'.encode('latin-1')):
+            home=self.root/'codex-home'; home.mkdir(exist_ok=True); (home/'config.toml').write_bytes(data)
+            with patch.dict('os.environ',{'CODEX_HOME':str(home)}), patch('sys.stderr') as err:
+                self.assertFalse(runner.forget_trust('/w/a'))
+            self.assertIn('未清理', ''.join(call.args[0] for call in err.write.call_args_list), data)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)

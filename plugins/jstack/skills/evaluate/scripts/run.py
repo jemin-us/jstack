@@ -5,6 +5,7 @@ from datetime import date, timedelta
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import signal
@@ -257,51 +258,108 @@ def preserve_files(workspace, destination):
             shutil.copyfile(path,target)
 
 
-def table_path(line):
-    """把一行 TOML 表头解析成键路径；不是表头时返回 None。引号、空白和行尾注释交给 tomllib 处理。"""
+def parse_toml(text):
     try:
-        data = tomllib.loads(line)
+        return tomllib.loads(text)
     except tomllib.TOMLDecodeError:
         return None
+
+
+def statements(lines):
+    """按 TOML 语句切分：从上一个边界起累积到能单独解析为止；多行数组和字符串会一直累积到闭合。"""
+    start = 0
+    for index in range(len(lines)):
+        chunk = ''.join(lines[start:index + 1])
+        if parse_toml(chunk) is not None:
+            yield chunk
+            start = index + 1
+
+
+def key_path(data, header):
+    """沿只有一个键的字典往下走，得到这条语句定义的键路径；表头 [[…]] 定义的数组表取最后一项。"""
     path = []
     while isinstance(data, dict) and len(data) == 1:
         key, data = next(iter(data.items()))
         path.append(key)
-        if isinstance(data, list):
-            data = data[-1] if data else None
-    return path or None
+        if header and isinstance(data, list) and data:
+            data = data[-1]
+    return path
 
 
-def complete(lines):
-    """前面的内容能完整解析时，下一行才在顶层；多行数组或字符串里以 [ 开头的行不是表头。"""
-    try:
-        tomllib.loads(''.join(lines))
-    except tomllib.TOMLDecodeError:
-        return False
-    return True
+def flush(pending, kept, inside, after_dropped):
+    """夹在两段被删内容之间的注释和空行一起删；被删内容后紧跟的连续空行删；其余原样保留。"""
+    if inside:
+        return
+    start = 0
+    while after_dropped and start < len(pending) and not pending[start].strip():
+        start += 1
+    kept.extend(pending[start:])
+
+
+def without_projects(data, targets):
+    """去掉目标工作区后的期望配置；projects 变空时视同不存在。"""
+    data = dict(data)
+    projects = data.get('projects')
+    if isinstance(projects, dict):
+        projects = {name: value for name, value in projects.items() if name not in targets}
+        if projects:
+            data['projects'] = projects
+        else:
+            data.pop('projects')
+    return data
 
 
 def forget_trust(workspace):
-    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的表及其子表，其余配置原样保留。"""
+    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的条目，其余配置逐字节保留。
+
+    表头、点号键和内联表写法都按 TOML 语句识别。写回前核对解析结果等于原配置去掉该工作区，
+    不一致（例如它和别的项目写在同一个内联表里）或原文件解析不了时不写。"""
     config = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'config.toml'
     if not config.is_file():
         return False
+    try:
+        with config.open(encoding='utf-8', newline='') as handle:
+            text = handle.read()
+    except UnicodeDecodeError:
+        text = None  # TOML 必须是 UTF-8
+    original = parse_toml(text) if text is not None else None
+    if original is None:
+        print(f'未清理 {config}：不是 UTF-8 或无法解析为 TOML，请手动处理', file=sys.stderr)
+        return False
     targets = {str(workspace), str(Path(workspace).resolve())}
-    text = config.read_text()
-    if not complete([text]):
-        return False  # 原文件解析不了时无法判断表的边界，不动它
-    lines = text.splitlines(keepends=True)
-    kept, skipping, changed = [], False, False
-    for index, line in enumerate(lines):
-        path = table_path(line) if line.lstrip().startswith('[') and complete(lines[:index]) else None
-        if path is not None:
-            skipping = len(path) >= 2 and path[0] == 'projects' and path[1] in targets
-            changed |= skipping
-        if not skipping:
-            kept.append(line)
-    if changed:
-        config.write_text(''.join(kept))
-    return changed
+    projects = original.get('projects')
+    if not isinstance(projects, dict) or not targets & projects.keys():
+        return False
+    # 只按 \n 切行：splitlines 还会在注释允许出现的 U+2028 等字符处切断。
+    chunks = list(statements([line for line in re.split(r'(?<=\n)', text) if line]))
+    kept, pending, table, dropped = [], [], [], False
+    for chunk in chunks:
+        data = parse_toml(chunk)
+        header = chunk.lstrip().startswith('[')
+        if not data and not header:
+            pending.append(chunk)  # 空行和整行注释，等下一条语句决定归属
+            continue
+        path = key_path(data, header)
+        if header:
+            table = full = path
+        else:
+            full = table + path
+        drop = len(full) >= 2 and full[0] == 'projects' and full[1] in targets
+        flush(pending, kept, inside=dropped and drop and not header, after_dropped=dropped)
+        if not drop:
+            kept.append(chunk)
+        pending, dropped = [], drop
+    flush(pending, kept, inside=False, after_dropped=dropped)
+    result = ''.join(kept)
+    after = parse_toml(result)
+    if ''.join(chunks) != text or after is None \
+            or without_projects(after, targets) != without_projects(original, targets) \
+            or targets & (after.get('projects') or {}).keys():
+        print(f'未清理 {config}：{workspace} 的条目无法单独删除，请手动处理', file=sys.stderr)
+        return False
+    with config.open('w', encoding='utf-8', newline='') as handle:
+        handle.write(result)
+    return True
 
 
 def run_case(case_name, client, source, destination, timeout):
