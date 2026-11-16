@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """运行隔离的真实客户端任务；客观检查通过后仍须独立审查。"""
 import argparse
+from datetime import date, timedelta
 import hashlib
 import json
 import os
@@ -185,7 +186,10 @@ def find_rollouts(events):
     parent = next(iter(sorted(sessions.glob(f'*/*/*/rollout-*-{thread}.jsonl'))), None)
     children = {}
     if parent:
-        for path in sorted(parent.parent.glob('rollout-*.jsonl')):
+        # 会话目录按日期分，子 agent 可能跨过午夜落进下一天的目录。
+        day = date(*map(int, parent.parent.relative_to(sessions).parts))
+        following = sessions/(day + timedelta(days=1)).strftime('%Y/%m/%d')
+        for path in sorted([*parent.parent.glob('rollout-*.jsonl'), *following.glob('rollout-*.jsonl')]):
             with path.open() as handle:
                 first = handle.readline()
             try:

@@ -210,6 +210,16 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(runner.event_summary(events,'codex',rollout)['independent_reviewers'],[])
         self.assertEqual(runner.event_summary(events,'codex')['independent_reviewers'],[])
 
+    def test_codex_child_rollout_found_after_midnight(self):
+        home=self.root/'codex-home'
+        day=home/'sessions/2026/12/31'; day.mkdir(parents=True)
+        nextday=home/'sessions/2027/01/01'; nextday.mkdir(parents=True)
+        parent=day/'rollout-2026-12-31T23-59-59-t1.jsonl'; parent.write_text('{"type":"session_meta","payload":{"id":"t1"}}\n')
+        child=nextday/'rollout-2027-01-01T00-00-01-t2.jsonl'
+        child.write_text(json.dumps({'type':'session_meta','payload':{'parent_thread_id':'t1','agent_path':'/root/r'}})+'\n')
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertEqual(runner.find_rollouts([{'type':'thread.started','thread_id':'t1'}]),(parent,{'/root/r':child}))
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
