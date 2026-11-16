@@ -247,6 +247,17 @@ class RunnerTests(unittest.TestCase):
                 self.assertTrue(runner.forget_trust(work), header)
                 self.assertEqual(config.read_text(),f'model = "m"\n{tail}', header)
 
+    def test_forget_trust_ignores_brackets_inside_multiline_values(self):
+        home=self.root/'codex-home'; home.mkdir()
+        work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
+        path=str(work.resolve()); config=home/'config.toml'
+        other=f'[notes]\ntext = """\n[projects."{path}"]\n"""\n'
+        tail='[projects."/x/workspace-b/project"]\ntrust_level = "trusted"\n'
+        config.write_text(f'{other}[projects."{path}"]\narr = [\n  ["x"],\n]\ns = \'\'\'\n[other]\n\'\'\'\n{tail}')
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertTrue(runner.forget_trust(work))
+            self.assertEqual(config.read_text(),other+tail)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)

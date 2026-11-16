@@ -272,15 +272,25 @@ def table_path(line):
     return path or None
 
 
+def complete(lines):
+    """前面的内容能完整解析时，下一行才在顶层；多行数组或字符串里以 [ 开头的行不是表头。"""
+    try:
+        tomllib.loads(''.join(lines))
+    except tomllib.TOMLDecodeError:
+        return False
+    return True
+
+
 def forget_trust(workspace):
     """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的表及其子表，其余配置原样保留。"""
     config = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'config.toml'
     if not config.is_file():
         return False
     targets = {str(workspace), str(Path(workspace).resolve())}
+    lines = config.read_text().splitlines(keepends=True)
     kept, skipping, changed = [], False, False
-    for line in config.read_text().splitlines(keepends=True):
-        path = table_path(line) if line.lstrip().startswith('[') else None
+    for index, line in enumerate(lines):
+        path = table_path(line) if line.lstrip().startswith('[') and complete(lines[:index]) else None
         if path is not None:
             skipping = len(path) >= 2 and path[0] == 'projects' and path[1] in targets
             changed |= skipping
