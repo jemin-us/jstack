@@ -187,9 +187,13 @@ def find_rollouts(events):
     children = {}
     if parent:
         # 会话目录按日期分，子 agent 可能跨过午夜落进下一天的目录。
-        day = date(*map(int, parent.parent.relative_to(sessions).parts))
-        following = sessions/(day + timedelta(days=1)).strftime('%Y/%m/%d')
-        for path in sorted([*parent.parent.glob('rollout-*.jsonl'), *following.glob('rollout-*.jsonl')]):
+        folders = [parent.parent]
+        try:
+            day = date(*map(int, parent.parent.relative_to(sessions).parts))
+            folders.append(sessions/(day + timedelta(days=1)).strftime('%Y/%m/%d'))
+        except ValueError:
+            pass  # 目录不是 年/月/日 结构时只找父 rollout 所在目录
+        for path in sorted(path for folder in folders for path in folder.glob('rollout-*.jsonl')):
             with path.open() as handle:
                 first = handle.readline()
             try:

@@ -220,6 +220,14 @@ class RunnerTests(unittest.TestCase):
         with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
             self.assertEqual(runner.find_rollouts([{'type':'thread.started','thread_id':'t1'}]),(parent,{'/root/r':child}))
 
+    def test_codex_rollout_outside_dated_folders_does_not_crash(self):
+        home=self.root/'codex-home'; folder=home/'sessions/archive/x/y'; folder.mkdir(parents=True)
+        parent=folder/'rollout-a-t1.jsonl'; parent.write_text('{"type":"session_meta","payload":{"id":"t1"}}\n')
+        child=folder/'rollout-b-t2.jsonl'
+        child.write_text(json.dumps({'type':'session_meta','payload':{'parent_thread_id':'t1','agent_path':'/root/r'}})+'\n')
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertEqual(runner.find_rollouts([{'type':'thread.started','thread_id':'t1'}]),(parent,{'/root/r':child}))
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
