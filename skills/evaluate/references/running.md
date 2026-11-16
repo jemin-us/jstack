@@ -1,6 +1,6 @@
 # 运行行为评测
 
-脚本仅使用 Python 标准库、Git 和已安装且已登录的客户端。Codex 不加 `--ephemeral`，否则不写 rollout，subagent 无法启动；因此每次运行会在用户的 Codex 会话目录留下 rollout。Codex 把临时工作区记为 trusted 项目，脚本在运行结束后从 `config.toml` 删掉本次工作区那一段，其余配置不动。Claude 通过 `--settings` 开沙箱并自动放行 Bash，写入限于工作区。不会安装客户端或创建 API key。候选项目没有远端；本地范围写在项目指令中，但这不是操作系统级的网络隔离。运行前使用测试账号或客户端沙箱，不能向候选提供生产凭据。不要用绕过权限的参数。
+脚本仅使用 Python 标准库、Git 和已安装且已登录的客户端。Codex 不加 `--ephemeral`，否则不写 rollout，subagent 无法启动；因此每次运行会在用户的 Codex 会话目录留下 rollout。Codex 把临时工作区记为 trusted 项目，脚本在运行结束后从 `config.toml` 删掉本次工作区的表及其子表（按 TOML 解析表头，不限引号和空白写法；原文件解析不了时不动），其余配置不动。Claude 通过 `--settings` 开沙箱并自动放行 Bash，写入限于工作区。不会安装客户端或创建 API key。候选项目没有远端；本地范围写在项目指令中，但这不是操作系统级的网络隔离。运行前使用测试账号或客户端沙箱，不能向候选提供生产凭据。不要用绕过权限的参数。
 
 ```bash
 python3 skills/evaluate/scripts/run.py --list

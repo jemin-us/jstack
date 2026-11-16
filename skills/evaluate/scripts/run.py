@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 
 from cases import CASES
 
@@ -191,8 +192,8 @@ def find_rollouts(events):
         try:
             day = date(*map(int, parent.parent.relative_to(sessions).parts))
             folders.append(sessions/(day + timedelta(days=1)).strftime('%Y/%m/%d'))
-        except ValueError:
-            pass  # 目录不是 年/月/日 结构时只找父 rollout 所在目录
+        except (ValueError, OverflowError):
+            pass  # 目录不是 年/月/日 结构，或已是可表示的最后一天时，只找父 rollout 所在目录
         for path in sorted(path for folder in folders for path in folder.glob('rollout-*.jsonl')):
             with path.open() as handle:
                 first = handle.readline()
@@ -256,16 +257,45 @@ def preserve_files(workspace, destination):
             shutil.copyfile(path,target)
 
 
+def table_path(line):
+    """把一行 TOML 表头解析成键路径；不是表头时返回 None。引号、空白和行尾注释交给 tomllib 处理。"""
+    try:
+        data = tomllib.loads(line)
+    except tomllib.TOMLDecodeError:
+        return None
+    path = []
+    while isinstance(data, dict) and len(data) == 1:
+        key, data = next(iter(data.items()))
+        path.append(key)
+        if isinstance(data, list):
+            data = data[-1] if data else None
+    return path or None
+
+
+def complete(lines):
+    """前面的内容能完整解析时，下一行才在顶层；多行数组或字符串里以 [ 开头的行不是表头。"""
+    try:
+        tomllib.loads(''.join(lines))
+    except tomllib.TOMLDecodeError:
+        return False
+    return True
+
+
 def forget_trust(workspace):
-    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的那一段，其余配置原样保留。"""
+    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的表及其子表，其余配置原样保留。"""
     config = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'config.toml'
     if not config.is_file():
         return False
-    headers = {f'[projects."{path}"]' for path in (str(workspace), str(Path(workspace).resolve()))}
+    targets = {str(workspace), str(Path(workspace).resolve())}
+    text = config.read_text()
+    if not complete([text]):
+        return False  # 原文件解析不了时无法判断表的边界，不动它
+    lines = text.splitlines(keepends=True)
     kept, skipping, changed = [], False, False
-    for line in config.read_text().splitlines(keepends=True):
-        if line.startswith('['):
-            skipping = line.strip() in headers
+    for index, line in enumerate(lines):
+        path = table_path(line) if line.lstrip().startswith('[') and complete(lines[:index]) else None
+        if path is not None:
+            skipping = len(path) >= 2 and path[0] == 'projects' and path[1] in targets
             changed |= skipping
         if not skipping:
             kept.append(line)
