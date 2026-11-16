@@ -257,51 +257,81 @@ def preserve_files(workspace, destination):
             shutil.copyfile(path,target)
 
 
-def table_path(line):
-    """把一行 TOML 表头解析成键路径；不是表头时返回 None。引号、空白和行尾注释交给 tomllib 处理。"""
+def parse_toml(text):
     try:
-        data = tomllib.loads(line)
+        return tomllib.loads(text)
     except tomllib.TOMLDecodeError:
         return None
+
+
+def statements(lines):
+    """按 TOML 语句切分：从上一个边界起累积到能单独解析为止；多行数组和字符串会一直累积到闭合。"""
+    start = 0
+    for index in range(len(lines)):
+        chunk = ''.join(lines[start:index + 1])
+        if parse_toml(chunk) is not None:
+            yield chunk
+            start = index + 1
+
+
+def key_path(data, header):
+    """沿只有一个键的字典往下走，得到这条语句定义的键路径；表头 [[…]] 定义的数组表取最后一项。"""
     path = []
     while isinstance(data, dict) and len(data) == 1:
         key, data = next(iter(data.items()))
         path.append(key)
-        if isinstance(data, list):
-            data = data[-1] if data else None
-    return path or None
+        if header and isinstance(data, list) and data:
+            data = data[-1]
+    return path
 
 
-def complete(lines):
-    """前面的内容能完整解析时，下一行才在顶层；多行数组或字符串里以 [ 开头的行不是表头。"""
-    try:
-        tomllib.loads(''.join(lines))
-    except tomllib.TOMLDecodeError:
-        return False
-    return True
+def without_projects(data, targets):
+    """去掉目标工作区后的期望配置；projects 变空时视同不存在。"""
+    data = dict(data)
+    projects = data.get('projects')
+    if isinstance(projects, dict):
+        projects = {name: value for name, value in projects.items() if name not in targets}
+        if projects:
+            data['projects'] = projects
+        else:
+            data.pop('projects')
+    return data
 
 
 def forget_trust(workspace):
-    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的表及其子表，其余配置原样保留。"""
+    """Codex 会把临时工作区记成 trusted 项目；只删这一个工作区的条目，其余配置逐字节保留。
+
+    表头、点号键和内联表写法都按 TOML 语句识别。写回前核对解析结果等于原配置去掉该工作区，
+    不一致（例如它和别的项目写在同一个内联表里）或原文件解析不了时不写。"""
     config = Path(os.environ.get('CODEX_HOME', Path.home()/'.codex'))/'config.toml'
     if not config.is_file():
         return False
+    with config.open(newline='') as handle:
+        text = handle.read()
+    original = parse_toml(text)
     targets = {str(workspace), str(Path(workspace).resolve())}
-    text = config.read_text()
-    if not complete([text]):
-        return False  # 原文件解析不了时无法判断表的边界，不动它
-    lines = text.splitlines(keepends=True)
-    kept, skipping, changed = [], False, False
-    for index, line in enumerate(lines):
-        path = table_path(line) if line.lstrip().startswith('[') and complete(lines[:index]) else None
-        if path is not None:
-            skipping = len(path) >= 2 and path[0] == 'projects' and path[1] in targets
-            changed |= skipping
-        if not skipping:
-            kept.append(line)
-    if changed:
-        config.write_text(''.join(kept))
-    return changed
+    projects = original.get('projects') if original else None
+    if not isinstance(projects, dict) or not targets & projects.keys():
+        return False
+    kept, table = [], []
+    for chunk in statements(text.splitlines(keepends=True)):
+        header = chunk.lstrip().startswith('[')
+        path = key_path(parse_toml(chunk), header)
+        if header:
+            table = full = path
+        else:
+            full = table + path
+        if not (len(full) >= 2 and full[0] == 'projects' and full[1] in targets):
+            kept.append(chunk)
+    result = ''.join(kept)
+    after = parse_toml(result)
+    if after is None or without_projects(after, targets) != without_projects(original, targets) \
+            or targets & (after.get('projects') or {}).keys():
+        print(f'未清理 {config}：{workspace} 的条目无法单独删除，请手动处理', file=sys.stderr)
+        return False
+    with config.open('w', newline='') as handle:
+        handle.write(result)
+    return True
 
 
 def run_case(case_name, client, source, destination, timeout):

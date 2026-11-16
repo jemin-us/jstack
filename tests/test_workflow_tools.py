@@ -268,6 +268,40 @@ class RunnerTests(unittest.TestCase):
             self.assertFalse(runner.forget_trust(work))
             self.assertEqual(config.read_text(),text)
 
+    def forget_in(self, text, binary=False):
+        home=self.root/'codex-home'; home.mkdir(exist_ok=True)
+        work=self.root/'workspace-a'/'project'; work.mkdir(parents=True, exist_ok=True)
+        text=text.replace('WS',str(work.resolve())); config=home/'config.toml'
+        config.write_bytes(text.encode())
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            return runner.forget_trust(work), config.read_bytes().decode()
+
+    def test_forget_trust_removes_dotted_and_inline_forms(self):
+        other='[projects."/x/b"]\ntrust_level = "trusted"\n'
+        forms=['[projects]\n"WS".trust_level = "trusted"\n',
+               '[projects]\n"WS" = { trust_level = "trusted" }\n',
+               'projects."WS".trust_level = "trusted"\n']
+        ok,text=self.forget_in('model = "m"\nprojects = { "WS" = { trust_level = "trusted" } }\n[features]\nx = 1\n')
+        self.assertTrue(ok)
+        self.assertEqual(text,'model = "m"\n[features]\nx = 1\n')
+        for form in forms:
+            ok,text=self.forget_in('model = "m"\n'+form+other)
+            self.assertTrue(ok, form)
+            self.assertNotIn(str((self.root/'workspace-a'/'project').resolve()), text, form)
+            self.assertIn(other, text, form)
+            self.assertEqual(runner.tomllib.loads(text)['projects'], {'/x/b':{'trust_level':'trusted'}}, form)
+
+    def test_forget_trust_leaves_shared_inline_table_untouched(self):
+        text='projects = { "WS" = { trust_level = "trusted" }, "/x/b" = { trust_level = "trusted" } }\n'
+        ok,after=self.forget_in(text)
+        self.assertFalse(ok)
+        self.assertEqual(after, text.replace('WS',str((self.root/'workspace-a'/'project').resolve())))
+
+    def test_forget_trust_keeps_crlf_line_endings(self):
+        ok,text=self.forget_in('model = "m"\r\n[projects."WS"]\r\ntrust_level = "trusted"\r\n[features]\r\nx = 1\r\n')
+        self.assertTrue(ok)
+        self.assertEqual(text,'model = "m"\r\n[features]\r\nx = 1\r\n')
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
