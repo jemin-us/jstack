@@ -345,7 +345,7 @@ def forget_trust(workspace):
         else:
             full = table + path
         drop = len(full) >= 2 and full[0] == 'projects' and full[1] in targets
-        flush(pending, kept, inside=dropped and drop and not header, after_dropped=dropped)
+        flush(pending, kept, inside=dropped and drop, after_dropped=dropped)
         if not drop:
             kept.append(chunk)
         pending, dropped = [], drop

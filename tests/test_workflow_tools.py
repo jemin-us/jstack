@@ -332,6 +332,14 @@ class RunnerTests(unittest.TestCase):
                 self.assertFalse(runner.forget_trust('/w/a'))
             self.assertIn('未清理', ''.join(call.args[0] for call in err.write.call_args_list), data)
 
+    def test_forget_trust_drops_comments_between_removed_tables(self):
+        cases={'[projects."WS"]\nt = 1\n# sub\n[projects."WS".sub]\nx = 1\n\n[z]\nq = 1\n':'[z]\nq = 1\n',
+               '[[projects."WS".hooks]]\na = 1\n# between hooks\n[[projects."WS".hooks]]\na = 2\n[projects."/x/b"]\nt = 1\n':'[projects."/x/b"]\nt = 1\n'}
+        for before,after in cases.items():
+            ok,text=self.forget_in(before)
+            self.assertTrue(ok, before)
+            self.assertEqual(text, after, before)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
