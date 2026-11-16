@@ -258,6 +258,16 @@ class RunnerTests(unittest.TestCase):
             self.assertTrue(runner.forget_trust(work))
             self.assertEqual(config.read_text(),other+tail)
 
+    def test_forget_trust_leaves_unparseable_config_untouched(self):
+        home=self.root/'codex-home'; home.mkdir()
+        work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)
+        config=home/'config.toml'
+        text=f'[projects."{work.resolve()}"]\nk = 1\nk = 2\n[projects."/x/b"]\ntrust_level = "trusted"\n[mcp]\nx = 1\n'
+        config.write_text(text)
+        with patch.dict('os.environ',{'CODEX_HOME':str(home)}):
+            self.assertFalse(runner.forget_trust(work))
+            self.assertEqual(config.read_text(),text)
+
     def test_forget_trust_removes_only_this_workspace_section(self):
         home=self.root/'codex-home'; home.mkdir()
         work=self.root/'workspace-a'/'project'; work.mkdir(parents=True)

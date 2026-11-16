@@ -287,7 +287,10 @@ def forget_trust(workspace):
     if not config.is_file():
         return False
     targets = {str(workspace), str(Path(workspace).resolve())}
-    lines = config.read_text().splitlines(keepends=True)
+    text = config.read_text()
+    if not complete([text]):
+        return False  # 原文件解析不了时无法判断表的边界，不动它
+    lines = text.splitlines(keepends=True)
     kept, skipping, changed = [], False, False
     for index, line in enumerate(lines):
         path = table_path(line) if line.lstrip().startswith('[') and complete(lines[:index]) else None
