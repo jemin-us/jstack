@@ -1,57 +1,23 @@
 # jstack 仓库指南
 
-Claude Code、Codex 和 Antigravity CLI（agy）共用这份指南，三端都直接读取 `AGENTS.md`，不另建 `CLAUDE.md`。
+jstack 是 Claude Code、Codex 和 Antigravity CLI（agy）共用的个人工程工作流插件。三端直接读取 `AGENTS.md`，根目录不建 `CLAUDE.md`（建了会让 Claude Code 不再读 `AGENTS.md`）。
 
-## 项目
+## 结构与生成文件
 
-jstack 是个人工程工作流插件，Claude Code、Codex 和 agy 共用 `skills/` 下的同一份源码。
+- 唯一需要手改的源码：`skills/` 与 `VERSION`（版本号唯一来源）。
+- 生成文件不手改：`.claude-plugin/`、`.agents/plugins/`、`plugins/jstack/`。
 
-## 仓库结构
+## 开发与校验
 
-- `skills/`：skill 源码，唯一需要手改的 skill 内容。
-- `VERSION`：版本号的唯一来源。
-- `scripts/build_metadata.py`：从 `VERSION` 和 `skills/` 生成下面这些文件。
-- 生成文件，不要手改：
-  - `.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`：Claude Code 插件和 marketplace。
-  - `.agents/plugins/marketplace.json`：Codex marketplace，指向 `plugins/jstack`。
-  - `plugins/jstack/`：Codex 插件，`skills/` 的逐字节镜像加 `.codex-plugin/plugin.json`。
-- `scripts/check_version.py`：CI 用，改了会发布的文件时要求 `VERSION` 递增。
-
-## 规则台账
-
-改 `AGENTS.md`、skill 的规则或全局规则时，读 `docs/agent-rules.md`，并在其中增删对应的行。
-
-## 命令
-
-```bash
-make test        # validate + 生成文件漂移检查，CI 跑的就是它
-make regenerate  # 改了 VERSION 或 skills/ 后运行，生成结果和源文件一起提交
-```
-
-## 开发规则
-
-- 改 `skills/` 或 `VERSION` 后运行 `make regenerate`，再运行 `make test`。
-- skill 之间只能引用对方的 `SKILL.md`，不能引用对方的 `references/`、`scripts/` 等内部文件；多个 skill 共用的内容抽成单独的 skill。`scripts/validate.py` 会检查这一条。
+- 改了会发布的文件（`skills/`、`.claude-plugin/`、`.agents/`、`plugins/`）须递增 `VERSION`，再运行 `make regenerate && make test`（CI 跑的就是 `make test`），生成结果与源文件一起提交。
+- skill 之间只能引用对方的 `SKILL.md`，不能引用 `references/`、`scripts/` 等内部文件；多个 skill 共用的内容抽成单独的 skill。
+- 改 `AGENTS.md`、skill 的规则或全局规则时，读 [docs/agent-rules.md](docs/agent-rules.md) 并同步增删对应的行。
 
 ## 发布
 
-三端都从 GitHub 仓库 `jemin-us/jstack` 安装插件。合并进 `main` 就是发布。
+三端都从 GitHub 仓库 `jemin-us/jstack` 安装插件，合并进 `main` 就是发布。合并前：
 
-发布前：
-
-- PR 上的 CI 会运行 `make test` 并检查版本号，失败时先修好再合并。
+- PR 上的 CI（`make test` 与版本号检查）必须通过，失败时先修好再合并。
 - CI 不跑 `claude plugin validate .`（需要 Claude CLI），合并前在本地运行一次，通过后再合并。
 
-发布后各端更新，Claude Code 要重启会话才生效：
-
-```bash
-claude plugin marketplace update jstack && claude plugin update jstack@jstack
-codex plugin marketplace upgrade jstack && codex plugin add jstack@jstack
-agy plugin install https://github.com/jemin-us/jstack
-```
-
-发布前试用：
-
-- Claude Code：`claude --plugin-dir <仓库路径>`，直接从源码加载，不经过缓存。
-- Codex：没有对应参数，只能先发布，再按上面的命令更新。
-- agy：`agy plugin install <仓库路径>`，自动从 Claude Code 插件转换安装到 `~/.gemini/config/plugins/jstack`（直接对仓库根目录运行 `agy plugin validate` 会报错，需对转换后的目录校验）。
+本地试用、校验或更新已安装的 jstack 插件时，读取 [docs/releasing.md](docs/releasing.md)。

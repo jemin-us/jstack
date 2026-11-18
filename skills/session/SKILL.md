@@ -1,6 +1,6 @@
 ---
 name: session
-description: 当用户要求暂停、恢复、交接或继续此前长任务时使用。保存最少的工作状态，核实原分支和证据后从未完成步骤继续；普通新任务使用 mode。
+description: 暂停、交接或恢复长任务，保存最少工作状态并在核实分支与证据后从断点继续；不扫描无关会话。
 disable-model-invocation: true
 ---
 

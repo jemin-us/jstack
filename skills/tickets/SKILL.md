@@ -1,6 +1,6 @@
 ---
 name: tickets
-description: "当用户要求把已有的 spec 或指明编号的 spec issue 拆成 ticket 时使用，例如“把 #12 拆成 ticket”。规划切分、实现顺序和阻塞关系，并发布为 GitHub issue。还没有 spec 时使用 `spec`；泛化的新功能请求使用 mode。"
+description: "把已有 spec 规划切分、实现顺序和阻塞关系，发布为 GitHub 子 issue（如“把 #12 拆成 ticket”）。由 mode 读取或用户手动调用。"
 disable-model-invocation: true
 ---
 
@@ -22,8 +22,6 @@ disable-model-invocation: true
 ### 2. 读取 spec
 
 用户给出 spec issue 编号或链接时，读取全文和全部评论，命令见 [references/github.md](references/github.md)。用户没给时，向用户索要，不要猜。
-
-再浏览 spec 涉及的代码，弄清现有结构、入口文件和相关测试。
 
 完成标准：能说出 spec 的每条行为由哪部分代码承载；spec 的“待定”一节为空。待定不为空时停止，提示用户先回到 `spec` 补全。
 

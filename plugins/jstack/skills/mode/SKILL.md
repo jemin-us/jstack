@@ -1,6 +1,6 @@
 ---
 name: mode
-description: "jstack 的统一入口。用户提出开发请求（加功能、改行为、修 bug、清理和重构代码），或只要其中一步时使用：追问需求（“先帮我把需求问清楚”）、写 spec（“把讨论结果写成 spec”）、拆 ticket（“把 #12 拆成 ticket”）、实现指明的 ticket（“实现 #42”“按 #42 写代码”）、诊断 bug、设计架构、独立验收（“验收当前分支的改动”“验收 #42”）、开 PR 和跟进 CI、审计代码、把规则落成检查、写 prompt、建或改 skill、精简上下文和规则、把纠正或复盘沉淀成规则（“沉淀一下”“记住这个教训”“这个错我又纠正了一次”“记成规则”“以后别再犯”）、暂停和恢复任务、配置项目。开发请求按 playbook 推进到 PR；单步请求读取对应的 jstack skill 并照做。只问 jstack 怎么用时使用 help。"
+description: "jstack 统一入口。用户提出开发请求（加功能、改行为、修 bug、清理重构、性能优化、视觉调整），或只要其中一步时使用：追问需求（“先帮我把需求问清楚”）、写 spec（“把讨论结果写成 spec”）、拆 ticket（“把 #12 拆成 ticket”）、实现（“实现 #42”）、诊断 bug、设计架构、独立验收（“验收 #42”）、开 PR 和跟进 CI、审计代码、固定代码基准、写 prompt、建或改 skill、精简上下文、沉淀规则（“沉淀一下”“记住这个教训”）、暂停恢复任务、配置项目。只问 jstack 怎么用时使用 help。"
 ---
 
 # jstack 入口
@@ -57,38 +57,15 @@ description: "jstack 的统一入口。用户提出开发请求（加功能、�
 
 完成标准：单步请求已说明读取哪个 skill，并按它执行到终点，不再执行下面的步骤。开发任务已说明选了哪个 playbook，并给出一句理由。选 change 时，向用户说明这次交给 implement，最终汇报里也写明由 implement 完成；implement 自己建 worktree、实现，再由 finish 执行 accept、修复闭环、PR 和清理，读取它的 `SKILL.md` 并照做后不再执行下面的步骤。maintenance、perf、visual 按对应 playbook 完成后结束，不重复执行通用收尾。只读调查和服务操作不进入开发交付流程；选用适合的只读技能或直接操作并验证，不为这些任务创建开发 PR。
 
-### 2. 准备分支
-
-只有 feature 执行本步，并且放到 `spec` 发布之后，因为分支名要用 spec 编号：按 [worktree](../worktree/SKILL.md) 的"集成 worktree"一节新建集成 worktree 和集成分支 `jstack/spec-<spec 编号>`，各 ticket 的改动最后都合并到这里。
-
-完成标准：feature 的集成 worktree 已建好，绝对路径已记下；bug-fix 和 change 已标为跳过。
-
-### 3. 执行 playbook
+### 2. 执行 playbook
 
 读取选定的 playbook 文件，把它的步骤原样抄进任务列表，按步骤执行，每完成一步就勾掉。不做的步骤保留在列表里，标为"跳过：<原因>"。feature playbook 派 subagent 实现 ticket 时，brief 用 [references/implement-brief.md](references/implement-brief.md)。
 
 完成标准：playbook 的每一步都已完成，或已标为跳过并写明原因。
 
-### 4. 收尾
+### 3. 收尾
 
-按 [harness](../harness/SKILL.md) 的三段汇报，各段写：
-
-```markdown
-**改了什么**
-- 每张 ticket（或这次修复）：行为变化、commit 范围
-
-**验证了什么**
-- 每张 ticket 的 accept 结论（PASS / PASS+NOTES / BLOCKED / FAIL）和关键证据（已运行）
-
-**还有什么**
-- 受阻的验收检查，以及原因
-- 当前 HEAD 未验证的检查；用户确认结束不代替技术验收
-- 按推荐答案定的假设、subagent 做出的假设、选定的测试接缝
-- 仍为 open 的 issue 及其状态（验收失败 / 验收受阻 / 待交付验证）
-- 跳过的步骤和原因
-```
-
-仅当交付范围内的必需检查和独立审查通过时，汇报后读取 [pr](../pr/SKILL.md) 并照做，分支在 feature 下是集成分支，在 bug-fix 下是修复分支，正文用上面的三段汇报。CI 修复继续使用原 worktree，累计审查轮数不重置。仅当 pr 核实当前 HEAD 为 READY（或已核实 MERGED），才关闭已完成的 issue，并按 [worktree](../worktree/SKILL.md) 清理对应的集成或修复 worktree、保留分支；失败或受阻时保留。
+仅 feature 和 bug-fix 执行本步：读取 [references/closing.md](references/closing.md) 并照做。
 
 完成标准：PR 和对应 HEAD 的 CI 结果已告诉用户；失败、受阻或明确限定范围时保留现场并说明未交付项，不以创建 PR 代替 CI 通过。feature 仅在交付成功后清理集成 worktree。
 

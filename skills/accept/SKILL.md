@@ -1,6 +1,6 @@
 ---
 name: accept
-description: "当用户要求独立验收指明的分支、commit、ticket 或 bug 修复时使用，例如“验收当前分支的改动”“验收 #42”。由非作者 agent 运行验收检查并审查代码质量，给出验收结论。编写代码使用 implement；泛化的新功能或 bug 请求使用 mode。"
+description: "由非作者 agent 独立运行验收检查并审查代码质量，给出验收结论（如“验收 #42”）。由 mode、finish 读取或用户手动调用。"
 disable-model-invocation: true
 ---
 

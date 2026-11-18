@@ -15,4 +15,4 @@
 5. **更新 issue**：bug 来自某个 issue 时，把 accept 结论评论到这个 issue 上；当前只评论验收状态并保持 open；pr 核实当前 HEAD 为 READY（或已核实 MERGED）后，PASS 或 PASS+NOTES 才关闭。没有对应 issue 时跳过。
 6. **保留现场**：进入 mode 收尾以完成 PR 和 CI 跟进；此前不删除 worktree。FAIL 或 BLOCKED 不进入正常交付。
    完成标准：工作区可供 CI 修复继续使用，阻塞状态已记录。
-7. **收尾**：按 mode 第 4 步汇报，附上修复前失败、修复后通过的两段输出，告诉用户保留的分支名；worktree 被保留时，列出路径和 worktree skill "清理"一节的删除命令。
+7. **收尾**：按 mode 第 3 步（[closing.md](../closing.md)）汇报，附上修复前失败、修复后通过的两段输出，告诉用户保留的分支名；worktree 被保留时，列出路径和 worktree skill "清理"一节的删除命令。
