@@ -412,6 +412,9 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],{}),set())
         self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],{'c1':self.agy_child(['send_message'])}),set())
         self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],{'c1':self.agy_child(['run_command'],status='ERROR')}),set())
+        # 失败的中间轮次必须清空上一轮未消费完的 pending 工具，防止后续 GENERIC 错配旧 invoke_subagent。
+        aborted={'step_index':2,'source':'MODEL','type':'PLANNER_RESPONSE','status':'ERROR','tool_calls':[{'name':'read_file'}]}
+        self.assertEqual(runner.transcript_reviewers([spawn,aborted,created,reply('c1','FAIL')],ran),set())
 
     def test_agy_transcripts_are_found_and_merged_into_summary(self):
         home=self.root/'agy-home'
@@ -439,15 +442,23 @@ class RunnerTests(unittest.TestCase):
         with patch.dict('os.environ',{'AGY_HOME':str(home)}):
             found,children=runner.find_transcripts(events_list)
             self.assertEqual((found,children),(parent,{'c1':child}))
+            # init 缺少顶层 conversation_id 时仍能回退从 result 事件读取。
+            fallback_events=[{'event':'init','init':{'cwd':str(self.root)}}, *events_list[1:]]
+            self.assertEqual(runner.find_transcripts(fallback_events),(parent,{'c1':child}))
         summary=runner.event_summary(events,'agy',parent,children)
         self.assertEqual(summary['tool_events'],2)
         self.assertEqual(summary['independent_reviewers'],['c1'])
-        # 瞬时重试留下 ERROR 标记时，仅在非超时中断且父 transcript 已正常完成最终回复时接纳；无 transcript 时拒绝。
+        # 瞬时重试留下 ERROR 标记时，仅在非超时中断且父 transcript 已正常完成无挂起工具调用的最终回复时接纳。
         events_list[-1]={'event':'result','result':{'conversation_id':'p1','status':'ERROR','finished_reason':'error','response':'final report','usage':{}}}
         events.write_text('\n'.join(json.dumps(x) for x in events_list)+'\n')
         self.assertEqual(runner.event_summary(events,'agy',parent,children)['independent_reviewers'],['c1'])
         with self.assertRaises(ValueError):
             runner.event_summary(events,'agy')
+        mid_tool=self.root/'parent-mid-tool.jsonl'
+        mid_tool.write_text(parent.read_text()+json.dumps(
+            {'step_index':6,'source':'MODEL','type':'PLANNER_RESPONSE','status':'DONE','content':'过渡说明','tool_calls':[{'name':'run_command'}]})+'\n')
+        with self.assertRaises(ValueError):
+            runner.event_summary(events,'agy',mid_tool,children)
         events_list[-1]['result']['finished_reason']='print_timeout'
         events.write_text('\n'.join(json.dumps(x) for x in events_list)+'\n')
         with self.assertRaises(ValueError):

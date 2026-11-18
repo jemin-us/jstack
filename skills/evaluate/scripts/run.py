@@ -170,8 +170,8 @@ def agy_child_ran_tools(records):
     for record in records:
         if not isinstance(record, dict):
             continue
-        if record.get('type') == 'PLANNER_RESPONSE' and record.get('status') == 'DONE':
-            pending = [c.get('name') for c in (record.get('tool_calls') or []) if isinstance(c, dict)]
+        if record.get('type') == 'PLANNER_RESPONSE':
+            pending = [c.get('name') for c in (record.get('tool_calls') or []) if isinstance(c, dict)] if record.get('status') == 'DONE' else []
         elif record.get('type') == 'GENERIC' and pending:
             name = pending.pop(0)
             if name and name not in AGY_COLLAB_TOOLS and record.get('status') == 'DONE' and str(record.get('content') or '').strip():
@@ -186,8 +186,8 @@ def transcript_reviewers(records, children):
         if not isinstance(record, dict):
             continue
         kind, status = record.get('type'), record.get('status')
-        if kind == 'PLANNER_RESPONSE' and status == 'DONE':
-            pending = [c.get('name') for c in (record.get('tool_calls') or []) if isinstance(c, dict)]
+        if kind == 'PLANNER_RESPONSE':
+            pending = [c.get('name') for c in (record.get('tool_calls') or []) if isinstance(c, dict)] if status == 'DONE' else []
         elif kind == 'GENERIC' and pending:
             name = pending.pop(0)
             if name == 'invoke_subagent' and status == 'DONE':
@@ -275,8 +275,8 @@ def find_rollouts(events):
 
 def find_transcripts(events):
     """按 conversation_id 找 agy 父会话与被派发子会话的完整 transcript；找不到时不推断成功。"""
-    conv = next((e.get('conversation_id') or (e.get('result') or {}).get('conversation_id')
-                 for e in events if isinstance(e, dict) and e.get('event') in ('init', 'result')), None)
+    conv = next((cid for e in events if isinstance(e, dict) and e.get('event') in ('init', 'result')
+                 and (cid := (e.get('conversation_id') or (e.get('result') or {}).get('conversation_id')))), None)
     if not valid_segment(conv):
         return None, {}
     brain = Path(os.environ.get('AGY_HOME', Path.home()/'.gemini/antigravity-cli'))/'brain'
@@ -325,7 +325,8 @@ def event_summary(path, client, rollout=None, children=None):
             raise ValueError('agy 未成功结束')
         last=terminal[-1]
         completed_turn = bool(records and isinstance(records[-1], dict) and records[-1].get('type')=='PLANNER_RESPONSE'
-                              and records[-1].get('status')=='DONE' and str(records[-1].get('content') or '').strip())
+                              and records[-1].get('status')=='DONE' and not records[-1].get('tool_calls')
+                              and str(records[-1].get('content') or '').strip())
         if last.get('finished_reason') in ('print_timeout','interrupted') or not str(last.get('response') or '').strip():
             raise ValueError('agy 未成功结束')
         if last.get('status')!='SUCCESS' and not completed_turn:
