@@ -1,0 +1,16 @@
+{
+  "inject-agent-rules": {
+    "PreToolUse": [
+      {
+        "matcher": "edit_file|write_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f ../scripts/hooks/inject_agent_rules.py ]; then exec python3 ../scripts/hooks/inject_agent_rules.py; else printf '{\"decision\":\"allow\"}\\n'; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

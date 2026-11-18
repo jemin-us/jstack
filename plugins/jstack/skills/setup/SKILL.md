@@ -1,6 +1,6 @@
 ---
 name: setup
-description: 当任务涉及在项目中启用 jstack、检查 git 与 gh 环境、确认 GitHub 账号和默认仓库时使用。运行只读检查脚本，补齐 gh 安装、账号写权限和默认仓库，项目没有验证 skill 时生成一个。只生成或更新验证 skill 使用 create-verify-app。
+description: 在项目中启用 jstack，检查 git 与 gh 环境、账号写权限及默认仓库，并在缺失时生成项目验证 skill。
 disable-model-invocation: true
 ---
 
@@ -66,12 +66,12 @@ ls -d .agents/skills/verify-* .claude/skills/verify-* 2>/dev/null
 其他 jstack skill 在 push、开 PR、创建或修改 issue 之前读取本节。运行：
 
 ```bash
-gh api repos/$(gh repo view --json nameWithOwner --jq .nameWithOwner) --jq .permissions.push
+python3 <本 skill 目录>/scripts/ensure_push_access.py .
 ```
 
-输出 `true` 时继续。否则按第 3 步找出有写权限的已登录账号，运行 `gh auth switch -u <账号>`，并告诉用户切到了哪个账号；没有这样的账号时停下，请用户自己运行 `gh auth login`。
+输出 `push_access=ok` 时继续（输出 `switched=<账号>` 时告诉用户切到了哪个账号）。退出码非 0 时，若提示当前账号权限不足或沙盒禁止切号，将 `gh auth switch -u <账号>` 或 `gh auth login` 交给用户执行；若未登录按第 3 步处理。
 
-完成标准：上面的命令输出 `true`。
+完成标准：脚本输出 `push_access=ok` 且退出码为 0。
 
 ## 示例
 

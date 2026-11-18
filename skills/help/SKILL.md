@@ -1,6 +1,6 @@
 ---
 name: help
-description: 当用户问 jstack 怎么用、有哪些 skill、某种情况该用哪个 skill 时使用。按用户的情况给出该用的 skill、调用的说法和之后的过程，只给建议，不执行。要直接开始开发使用 mode。
+description: 说明 jstack 用法并推荐对应 skill，只给建议，不执行。当用户问 jstack 怎么用或某事该用哪个 skill 时使用；直接执行任务使用 mode。
 ---
 
 # jstack 使用帮助

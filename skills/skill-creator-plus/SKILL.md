@@ -1,6 +1,6 @@
 ---
 name: skill-creator-plus
-description: 当任务涉及新建、修改或审查 skill，编写 SKILL.md，优化 description 或排查触发问题时使用。按用例确定结构，编写 description 和正文，运行校验脚本并做触发测试。流程行为评测使用 evaluate。
+description: 新建、修改或审查 skill，按用例设计结构、编写 description 与正文、运行校验脚本并做触发测试。
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,7 @@ disable-model-invocation: true
   ```
 
 - 写入已有的 skill 仓库前，按 [references/repo-conventions.md](references/repo-conventions.md) 读仓库约定并照做。
-- `references/` 没有覆盖的情况，或者用户要求对照官方规范时，读取 [assets/skill-build.pdf](assets/skill-build.pdf)。它和本 skill 不一致时以本 skill 为准：PDF 建议重复关键点、加强调标题和鼓励语，本 skill 要求一个约束只写一处。它共 33 页，按页码范围分段读取：技术要求在 10–13 页，测试在 15–17 页，常见写法和排错在 22–27 页，检查清单在 30–31 页。
+- `references/` 没有覆盖的情况，或用户要求对照官方规范时，读取 [references/official-pdf.md](references/official-pdf.md)。
 
 ## 创建流程
 

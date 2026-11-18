@@ -14,17 +14,37 @@ def frontmatter(text):
 
 
 def description(fm):
-    m = re.search(r"^description:\s*(.*)$", fm, re.M)
-    return m.group(1).strip().strip('"') if m else ""
+    lines = fm.splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r"^description:\s*(.*)$", line)
+        if not m:
+            continue
+        val = m.group(1).strip()
+        if val in (">-", ">", "|-", "|"):
+            parts = []
+            for nxt in lines[i + 1:]:
+                if re.match(r"^[ \t]+\S", nxt) or (not nxt.strip() and parts):
+                    parts.append(nxt.strip())
+                elif not nxt.strip():
+                    continue
+                else:
+                    break
+            return (" ".join(p for p in parts if p) if val.startswith(">") else "\n".join(parts)).strip()
+        return val.strip("\"'")
+    return ""
 
 
 def rows(project, skill_roots, home):
     out = []
-    for client, rel in [("Claude Code", ".claude/CLAUDE.md"), ("Codex", ".codex/AGENTS.md")]:
+    for client, rel in [
+        ("Claude Code", ".claude/CLAUDE.md"),
+        ("Codex", ".codex/AGENTS.md"),
+        ("agy", ".gemini/GEMINI.md"),
+    ]:
         p = home / rel
         if p.is_file():
             out.append((client, f"全局规则 ~/{rel}", len(p.read_text(encoding="utf-8"))))
-    for name, clients in [("AGENTS.md", "两端"), ("CLAUDE.md", "Claude Code")]:
+    for name, clients in [("AGENTS.md", "三端"), ("CLAUDE.md", "Claude Code")]:
         p = project / name
         if p.is_file():
             out.append((clients, f"项目 {name}", len(p.read_text(encoding="utf-8"))))
@@ -35,11 +55,19 @@ def rows(project, skill_roots, home):
             if not re.search(r"^paths:", frontmatter(text), re.M):
                 out.append(("Claude Code", f"无 paths: 的规则 {p.relative_to(project)}", len(text)))
     for root in skill_roots:
+        client_label, prefix = "三端", "description"
+        root_str = root.as_posix()
+        if "/.codex/skills" in root_str:
+            client_label, prefix = "Codex", "全局 skill"
+        elif "/.gemini/skills" in root_str:
+            client_label, prefix = "agy", "全局 skill"
+        elif "/.claude/skills" in root_str:
+            client_label, prefix = "Claude Code", "全局 skill"
         for p in sorted(root.glob("*/SKILL.md")):
             fm = frontmatter(p.read_text(encoding="utf-8"))
             if re.search(r"^disable-model-invocation:\s*true", fm, re.M):
                 continue
-            out.append(("两端", f"description {p.parent.name}", len(description(fm))))
+            out.append((client_label, f"{prefix} {p.parent.name}", len(description(fm))))
     return out
 
 
@@ -84,8 +112,15 @@ def main(argv=None):
     ap.add_argument("--home", default=str(Path.home()))
     a = ap.parse_args(argv)
     project = Path(a.project).resolve()
-    roots = [Path(r) for r in a.skills] if a.skills is not None else [project / "skills"]
-    data = rows(project, roots, Path(a.home))
+    home = Path(a.home)
+    if a.skills is not None:
+        roots = [Path(r) for r in a.skills]
+    else:
+        roots = [project / "skills"]
+        for extra in (home / ".claude/skills", home / ".codex/skills", home / ".gemini/skills"):
+            if extra.is_dir():
+                roots.append(extra)
+    data = rows(project, roots, home)
     print("| 端 | 来源 | 字符数 |\n|---|---|---|")
     for client, src, n in sorted(data, key=lambda r: -r[2]):
         print(f"| {client} | {src} | {n} |")

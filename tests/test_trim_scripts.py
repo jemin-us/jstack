@@ -4,20 +4,26 @@ import io
 import json
 from contextlib import redirect_stdout
 from pathlib import Path
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load(name):
-    spec = importlib.util.spec_from_file_location(name, ROOT / f"skills/trim/scripts/{name}.py")
+def load(name, rel_dir="skills/trim/scripts"):
+    p = ROOT / rel_dir / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(name, p)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
 inventory, usage, vanished = load("inventory"), load("usage"), load("vanished")
+inject_rules = load("inject_agent_rules", "scripts/hooks")
+sys.path.insert(0, str(ROOT / "skills/setup/scripts"))
+ensure_push_access = load("ensure_push_access", "skills/setup/scripts")
 
 
 class TrimScriptTests(unittest.TestCase):
@@ -36,16 +42,20 @@ class TrimScriptTests(unittest.TestCase):
 
     def test_inventory_counts_only_always_loaded(self):
         self.write("home/.claude/CLAUDE.md", "abc")
+        self.write("home/.gemini/GEMINI.md", "wxyz")
         self.write("proj/AGENTS.md", "12345")
         self.write("proj/.claude/rules/always.md", "xx")
         self.write("proj/.claude/rules/scoped.md", "---\npaths: [\"**/*.ts\"]\n---\nyy")
         self.write("proj/skills/auto/SKILL.md", "---\nname: auto\ndescription: 四个字符\n---\n正文")
+        self.write("proj/skills/multiline/SKILL.md", "---\nname: multiline\ndescription: >-\n  第一行\n  第二行\n---\n正文")
         self.write("proj/skills/manual/SKILL.md", "---\nname: manual\ndescription: 不该计入\ndisable-model-invocation: true\n---\n")
         rows = inventory.rows(self.root / "proj", [self.root / "proj/skills"], self.root / "home")
         names = {src: n for _, src, n in rows}
         self.assertEqual(names["全局规则 ~/.claude/CLAUDE.md"], 3)
+        self.assertEqual(names["全局规则 ~/.gemini/GEMINI.md"], 4)
         self.assertEqual(names["项目 AGENTS.md"], 5)
         self.assertEqual(names["description auto"], 4)
+        self.assertEqual(names["description multiline"], len("第一行 第二行"))
         self.assertIn("无 paths: 的规则 .claude/rules/always.md", names)
         self.assertFalse(any("scoped" in s or "manual" in s for s in names))
 
@@ -107,6 +117,65 @@ class TrimScriptTests(unittest.TestCase):
         with redirect_stdout(out):
             vanished.main(["--pair", str(before), str(after)])
         self.assertIn("共 2 行", out.getvalue())
+
+    def test_usage_counts_agy_transcript_reads(self):
+        self.write("home/.gemini/antigravity-cli/brain/c1/.system_generated/logs/transcript.jsonl", "\n".join([
+            json.dumps({"tool_calls": [{"name": "read_file", "args": {"Path": "/u/.gemini/skills/webapp-testing/SKILL.md"}}]}),
+            json.dumps({"tool_calls": [{"name": "view_file", "args": {"AbsolutePath": "/repo/skills/accept/SKILL.md"}}]}),
+            json.dumps({"type": "USER_INPUT", "content": "不要把 /u/.gemini/skills/pdf/SKILL.md 算进去"}),
+        ]))
+        reads, dev = usage.agy_counts({"webapp-testing", "accept", "pdf"}, [self.root / "home/.gemini/antigravity-cli/brain"])
+        self.assertEqual((reads["webapp-testing"], dev["accept"], reads["pdf"], dev["pdf"]), (1, 1, 0, 0))
+
+    def test_inject_agent_rules_hook_first_and_dedup(self):
+        marker_dir = self.root / "markers"
+        marker_dir.mkdir()
+        cc_ev = {"tool_name": "Edit", "tool_input": {"file_path": str(ROOT / "AGENTS.md")}, "session_id": "s-test-1"}
+        out1 = inject_rules.process_event(cc_ev, marker_dir=marker_dir)
+        self.assertIn("docs/agent-rules.md", out1["hookSpecificOutput"]["additionalContext"])
+        out2 = inject_rules.process_event(cc_ev, marker_dir=marker_dir)
+        self.assertEqual(out2, {})
+
+        agy_ev = {"toolCall": {"name": "edit_file", "args": {"Path": str(ROOT / "skills/mode/SKILL.md")}}, "conversationId": "c-test-1"}
+        agy1 = inject_rules.process_event(agy_ev, marker_dir=marker_dir)
+        self.assertEqual(agy1["decision"], "allow")
+        self.assertIn("docs/agent-rules.md", agy1["reason"])
+        agy2 = inject_rules.process_event(agy_ev, marker_dir=marker_dir)
+        self.assertEqual(agy2, {"decision": "allow"})
+
+        other_ev = {"tool_name": "Edit", "tool_input": {"file_path": str(ROOT / "README.md")}, "session_id": "s-test-2"}
+        self.assertEqual(inject_rules.process_event(other_ev, marker_dir=marker_dir), {})
+
+    def test_ensure_push_access_switches_account_when_needed(self):
+        status_text = (
+            "github.com\n"
+            "  ✓ Logged in to github.com account reader (keyring)\n"
+            "  - Active account: true\n"
+            "  ✓ Logged in to github.com account writer (keyring)\n"
+            "  - Active account: false\n"
+        )
+        calls = []
+
+        def fake_run(*cmd, cwd=None):
+            calls.append(cmd)
+            if cmd[:2] == ("git", "remote"):
+                return 0, "origin\thttps://github.com/o/r.git (push)\n"
+            if cmd[:3] == ("gh", "repo", "view"):
+                # 首次返回 READ，切到 writer 后返回 WRITE
+                switched = any(c[:3] == ("gh", "auth", "switch") and c[4] == "writer" for c in calls)
+                return 0, "WRITE\n" if switched else "READ\n"
+            if cmd[:3] == ("gh", "auth", "status"):
+                return 0, status_text
+            if cmd[:3] == ("gh", "auth", "switch"):
+                return 0, ""
+            return 1, ""
+
+        out = io.StringIO()
+        with patch.object(ensure_push_access.check_env, "run", side_effect=fake_run), redirect_stdout(out):
+            rc = ensure_push_access.ensure_access(self.root)
+        self.assertEqual(rc, 0)
+        self.assertIn("switched=writer", out.getvalue())
+        self.assertIn("push_access=ok", out.getvalue())
 
 
 if __name__ == "__main__":

@@ -1,12 +1,12 @@
 ---
 name: trim
-description: 精简给 agent 的上下文：盘点每轮加载的全局规则、项目指令文件和 skill description，逐段定修、删、挪、改写或保留，确认后先搬家再压缩，最后验证没有删过头、搬走的内容仍会被加载。用户要求精简上下文、清理规则或 skill，或换了模型后要重新检查规则时使用。只写或审查一篇文字使用 prompt；把一次纠正沉淀成规则使用 reflect。
+description: 盘点每轮加载的全局规则、项目指令与 skill description，逐段定处理方式，确认后先搬家再压缩并验证不删过头、搬走内容仍被加载；用于清理规则或换模型复查。
 disable-model-invocation: true
 ---
 
 # 精简 agent 上下文
 
-目标：每轮加载的内容只剩删掉后行为会变的句子，其余内容放在能按需加载的位置，并且有证据证明没有删过头。逐句怎么写、怎么修剪，按 [prompt](../prompt/SKILL.md)。
+目标：每轮加载的内容只剩删掉后行为会变的句子，其余内容放在能按需加载的位置，并且有证据证明没有删过头。逐句怎么写、怎么修剪，按 [prompt](../prompt/SKILL.md)。换了新模型后重跑本流程时，先读 [references/model-upgrade.md](references/model-upgrade.md)。
 
 ## 硬性规则
 
@@ -27,7 +27,7 @@ disable-model-invocation: true
 | 项目命令、发布步骤、对话里随时会触发的规则（提交、发布、回复、删除） | 项目指令文件（`AGENTS.md`）；挪进 `docs/` 的内容在指令文件里留一句什么时候去读 |
 | 跨项目的硬约束和偏好 | 全局规则 |
 
-两端差异：Claude Code 读 `CLAUDE.md` 和 `~/.claude/CLAUDE.md`，Codex 读 `AGENTS.md` 和 `~/.codex/AGENTS.md`。根目录已有 `AGENTS.md` 时不建 `CLAUDE.md`，否则 Claude Code 不再读 `AGENTS.md`。`when_to_use`、`paths:`、`.claude/rules` 和 hook 只在 Claude Code 生效，Codex 那端要保留文字版本。项目里重复全局规则的句子，只有用户用的每个客户端都读那条全局规则时才删。
+三端差异：Claude Code 读 `CLAUDE.md` 和 `~/.claude/CLAUDE.md`，Codex 读 `AGENTS.md` 和 `~/.codex/AGENTS.md`，agy 读 `AGENTS.md`、`GEMINI.md`、`~/.gemini/GEMINI.md`（并自动加载 `~/.gemini/skills/`）。根目录已有 `AGENTS.md` 时不建 `CLAUDE.md`，否则 Claude Code 不再读 `AGENTS.md`。`when_to_use`、`paths:`、`.claude/rules` 仅 Claude Code 生效，hook 在 Claude Code 与 agy 生效，Codex 端保留文字版本。项目里重复全局规则的句子，只有用户用的每个客户端都读那条全局规则时才删。
 
 ## 规则台账
 
@@ -46,9 +46,9 @@ trim 下线一行时，写明理由：机制已经接管，或新模型实测不
 
 ### 1. 盘点
 
-运行 `python3 <本 skill 目录>/scripts/inventory.py --project <项目> --skills <skill 根目录>`，得到每轮加载内容的字符数。再读按需加载的部分：各 skill 正文、`references/`、`docs/`。臃肿的内容先看是不是放错了位置，再看是不是写多了。
+运行 `python3 <本 skill 目录>/scripts/inventory.py --project <项目> [--skills <skill 根目录>]`（省略 `--skills` 时自动扫描项目与三端用户全局 skill 目录），得到每轮加载内容的字符数。再读按需加载的部分：各 skill 正文、`references/`、`docs/`。臃肿的内容先看是不是放错了位置，再看是不是写多了。
 
-判断一个 skill 有没有人用，运行 `python3 <本 skill 目录>/scripts/usage.py <skill 名> ...`，它按会话统计用户亲手输入的调用和读取 SKILL.md 的工具调用；按名字 grep 会话全文不算证据。调用 0 次的 skill 先查是否被其他 skill 按路径读取。
+判断一个 skill 有没有人用，运行 `python3 <本 skill 目录>/scripts/usage.py <skill 名> ...`，它按三端会话统计用户亲手输入的调用和读取 `SKILL.md` 的工具调用；按名字 grep 会话全文不算证据。调用 0 次的 skill 先查是否被其他 skill 按路径读取。
 
 完成标准：每个每轮加载的来源都有字符数；每个 skill 都有调用数据，或写明没有记录。
 
@@ -56,10 +56,10 @@ trim 下线一行时，写明理由：机制已经接管，或新模型实测不
 
 逐段给出处理方式：修、删、挪、改写、保留。挪写明目的地，每条附一句原因。
 
-- 删：删掉后行为不变的句子，例如“先读再改”“跑测试”“注意边界”这类模型本来就会做的；步骤删掉后 agent 能换条路做到同样结果的。只有顺序本身是约束的步骤留下，例如先验证再发布、先确认再删除。拿不准的单列，交给用户定。
+- 删：删掉后行为不变的句子，例如“先读再改”“跑测试”“注意边界”这类模型本来就会做的；步骤删掉后 agent 能换条路做到同样结果的（只写清做完状态、完成标准和证据，只有顺序本身是约束的步骤留下，例如先验证再发布、先确认再删除）。拿不准的单列，交给用户定。
 - 改写：同一种要求说了三遍，换成一个模型本来就懂的词，配一组 NO / OK 例子，例如“快、确定、开销小”写成“紧”，“要简洁”写成“不写报告腔”。
-- 挪：按“放置位置”一节。description 里只有部分场景用到的内容移到正文或 `references/`。
-- 修：指向不存在的文件、skill 或工具的内容，事实错误，两端不一致。
+- 挪：按“放置位置”一节。同样输入总得同样输出的改写成脚本或 hook；“做 Y 前先读 X”改成写/做 Y 时由 hook 注入 X；description 里只有部分场景用到的内容移到正文或 `references/`。
+- 修：指向不存在的文件、skill 或工具的内容，事实错误，多端不一致。
 
 按下面的格式交给用户，每次都用同样的分组和列，方便下次对比：
 

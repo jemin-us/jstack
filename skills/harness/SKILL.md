@@ -16,7 +16,7 @@ jstack 的 skill 用通用说法书写，按当前 Harness 所在的列执行。
 | 提示用户调用 | `/jstack:<name>` | `$<name>`，或 `/skills` 中选择 | `/jstack:<name>`，或 `/skills` 中查看（项目内 `.agents/skills` 加载时为 `/<name>`） |
 | 派 subagent 执行 brief | Agent 工具，`subagent_type: general-purpose`，brief 全文放进 prompt | 使用当前实际可用的 spawn/subagent 工具，按其支持的参数传入 brief；不要假定存在名为 worker 的角色 | `invoke_subagent`（需运行命令或改文件时 `TypeName` 填 `self`，纯只读调查可填 `research`），brief 全文放进 `Prompt`；调用后结束当前轮次等待系统唤醒并带回消息，多个并行时可同时调用或用 `run_workflow`，可复用类型用 `define_subagent` |
 | 向用户提问 | AskUserQuestion | 纯文本提问并等待回复 | 选择题用 `ask_question`；开放式或简单是否问题用纯文本提问并等待回复 |
-| 操作浏览器 | 内置浏览器工具；用户要求用自己的 Chrome 时用 Claude in Chrome | 已安装的 browser 或 chrome 插件；都没有时用 playwright skill | 交互时提示用户用内置 `/browser`（Chrome DevTools subagent）；自动执行且当前无浏览器工具时用内置 `webapp-testing` skill（Playwright） |
+| 操作浏览器 | 内置浏览器工具；用户要求用自己的 Chrome 时用 Claude in Chrome | 已安装的 browser 或 chrome 插件；都没有时用 playwright skill | 交互时提示用户用内置 `/browser`（Chrome DevTools subagent）；自动执行且当前无浏览器工具时读取 `~/.gemini/manual-skills/webapp-testing/SKILL.md`（Playwright） |
 | 任务列表 | 当前环境提供的任务列表工具 | 当前环境提供的计划工具 | 没有对应工具（`manage_task` 管理的是后台命令），在回复中写计划 |
 | 当前会话记录 | `~/.claude/projects/<项目绝对路径中的 / 换成 ->/<会话 id>.jsonl`，按修改时间取最近几个，核对第一条用户消息 | `~/.codex/sessions/<年>/<月>/<日>/rollout-*.jsonl`，按修改时间取最近几个，核对第一条用户消息 | `~/.gemini/antigravity-cli/brain/<会话 id>/.system_generated/logs/transcript.jsonl`（字段被截断时读同行 `transcript_full.jsonl`）；当前会话直接取环境信息中的 Conversation ID，其他会话按修改时间取最近几个并核对第一条 `USER_INPUT` |
 | 项目指令文件 | `CLAUDE.md`；若项目只有 `AGENTS.md`，Claude Code 会读取它 | `AGENTS.md`；Codex 默认不读 `CLAUDE.md` | `AGENTS.md` 和 `GEMINI.md`（同目录共存时都会读取，`AGENTS.md` 在前）；默认不读 `CLAUDE.md` |

@@ -15,6 +15,14 @@ import re
 from pathlib import Path
 
 
+def is_installed_context(ctx):
+    ctx_slash = ctx + "/"
+    return any(
+        seg in ctx_slash
+        for seg in ("/plugins/", "/.gemini/skills/", "/.gemini/manual-skills/", "/.codex/skills/", "/.claude/skills/")
+    )
+
+
 def hits(names, text):
     """返回 (已安装插件读取, 源码读取) 两个集合。"""
     inst, src = set(), set()
@@ -22,7 +30,7 @@ def hits(names, text):
         key = f"/{n}/SKILL.md"
         i = text.find(key)
         while i >= 0:
-            (inst if "/plugins/" in text[max(0, i - 200):i] else src).add(n)
+            (inst if is_installed_context(text[max(0, i - 200):i]) else src).add(n)
             i = text.find(key, i + 1)
     return inst, src
 
@@ -91,6 +99,23 @@ def codex_counts(names, roots):
     return reads, dev, calls
 
 
+def agy_counts(names, roots):
+    reads, dev = Counter(), Counter()
+    for root in roots:
+        for f in root.glob("*/.system_generated/logs/transcript.jsonl"):
+            seen, seen_dev = set(), set()
+            with open(f, errors="ignore") as fh:
+                for line in fh:
+                    if '"read_file"' not in line and '"view_file"' not in line:
+                        continue
+                    inst, src = hits(names, line)
+                    seen |= inst
+                    seen_dev |= src
+            reads.update(seen)
+            dev.update(seen_dev)
+    return reads, dev
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("names", nargs="+")
@@ -100,9 +125,17 @@ def main(argv=None):
     home = Path(a.home)
     calls, creads, cdev = claude_counts(set(a.names), home / ".claude/projects", a.plugin)
     xreads, xdev, xcalls = codex_counts(set(a.names), [home / ".codex/sessions", home / ".codex/archived_sessions"])
-    print("| skill | Claude 调用（Skill 工具和 /命令） | Codex 手动调用（$名称） | Claude 读取已安装 | Codex 读取已安装 | 源码路径读取（两端） |\n|---|---|---|---|---|---|")
-    for n in sorted(a.names, key=lambda n: -(calls[n] + xcalls[n] + creads[n] + xreads[n])):
-        print(f"| {n} | {calls[n]} | {xcalls[n]} | {creads[n]} | {xreads[n]} | {cdev[n] + xdev[n]} |")
+    areads, adev = agy_counts(
+        set(a.names),
+        [
+            home / ".gemini/antigravity-cli/brain",
+            home / ".gemini/antigravity/brain",
+            home / ".gemini/antigravity-ide/brain",
+        ],
+    )
+    print("| skill | Claude 调用（Skill 工具和 /命令） | Codex 手动调用（$名称） | Claude 读取已安装 | Codex 读取已安装 | agy 读取已安装 | 源码路径读取（三端） |\n|---|---|---|---|---|---|---|")
+    for n in sorted(a.names, key=lambda n: -(calls[n] + xcalls[n] + creads[n] + xreads[n] + areads[n])):
+        print(f"| {n} | {calls[n]} | {xcalls[n]} | {creads[n]} | {xreads[n]} | {areads[n]} | {cdev[n] + xdev[n] + adev[n]} |")
     print("\n数字都是会话数。0 次只说明这段记录里没人用，不等于可以删：先查是否被其他 skill 按路径读取。")
 
 
