@@ -1,10 +1,10 @@
 # jstack 仓库指南
 
-Claude Code 和 Codex 共用这份指南，两端都直接读取 `AGENTS.md`，不另建 `CLAUDE.md`。
+Claude Code、Codex 和 Antigravity CLI（agy）共用这份指南，三端都直接读取 `AGENTS.md`，不另建 `CLAUDE.md`。
 
 ## 项目
 
-jstack 是个人工程工作流插件，Claude Code 和 Codex 共用 `skills/` 下的同一份源码。
+jstack 是个人工程工作流插件，Claude Code、Codex 和 agy 共用 `skills/` 下的同一份源码。
 
 ## 仓库结构
 
@@ -35,21 +35,23 @@ make regenerate  # 改了 VERSION 或 skills/ 后运行，生成结果和源文�
 
 ## 发布
 
-两端都从 GitHub 仓库 `jemin-us/jstack` 安装插件。合并进 `main` 就是发布。
+三端都从 GitHub 仓库 `jemin-us/jstack` 安装插件。合并进 `main` 就是发布。
 
 发布前：
 
 - PR 上的 CI 会运行 `make test` 并检查版本号，失败时先修好再合并。
 - CI 不跑 `claude plugin validate .`（需要 Claude CLI），合并前在本地运行一次，通过后再合并。
 
-发布后两端各自更新，Claude Code 要重启会话才生效：
+发布后各端更新，Claude Code 要重启会话才生效：
 
 ```bash
 claude plugin marketplace update jstack && claude plugin update jstack@jstack
 codex plugin marketplace upgrade jstack && codex plugin add jstack@jstack
+agy plugin install https://github.com/jemin-us/jstack
 ```
 
 发布前试用：
 
 - Claude Code：`claude --plugin-dir <仓库路径>`，直接从源码加载，不经过缓存。
 - Codex：没有对应参数，只能先发布，再按上面的命令更新。
+- agy：`agy plugin install <仓库路径>`，自动从 Claude Code 插件转换安装到 `~/.gemini/config/plugins/jstack`（直接对仓库根目录运行 `agy plugin validate` 会报错，需对转换后的目录校验）。

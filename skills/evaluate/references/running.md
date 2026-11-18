@@ -1,11 +1,12 @@
 # 运行行为评测
 
-脚本仅使用 Python 标准库、Git 和已安装且已登录的客户端。Codex 不加 `--ephemeral`，否则不写 rollout，subagent 无法启动；因此每次运行会在用户的 Codex 会话目录留下 rollout。Codex 把临时工作区记为 trusted 项目，脚本在运行结束后从 `config.toml` 删掉本次工作区的条目（表头、点号键、内联表写法都按 TOML 语句识别），夹在被删内容之间的注释、被删内容后紧跟的连续空行一起删，其余内容（包括写给其他表或键的注释）逐字节保留；原文件不是 UTF-8 或解析不了，或该条目和其他项目写在同一个内联表里删不干净时，不写文件并在 stderr 提示手动处理。Claude 通过 `--settings` 开沙箱并自动放行 Bash，写入限于工作区。不会安装客户端或创建 API key。候选项目没有远端；本地范围写在项目指令中，但这不是操作系统级的网络隔离。运行前使用测试账号或客户端沙箱，不能向候选提供生产凭据。不要用绕过权限的参数。
+脚本仅使用 Python 标准库、Git 和已安装且已登录的客户端。Codex 不加 `--ephemeral`，否则不写 rollout，subagent 无法启动；因此每次运行会在用户的 Codex 会话目录留下 rollout。Codex 把临时工作区记为 trusted 项目，脚本在运行结束后从 `config.toml` 删掉本次工作区的条目（表头、点号键、内联表写法都按 TOML 语句识别），夹在被删内容之间的注释、被删内容后紧跟的连续空行一起删，其余内容（包括写给其他表或键的注释）逐字节保留；原文件不是 UTF-8 或解析不了，或该条目和其他项目写在同一个内联表里删不干净时，不写文件并在 stderr 提示手动处理。Claude 通过 `--settings` 开沙箱并自动放行 Bash，写入限于工作区。`agy` 通过会话级 `--settings` 开终端沙箱并放行沙箱内工具（`proceed-in-sandbox`），不写回用户配置文件，每次运行会在用户的 `agy` 会话目录留下 `brain/<id>` 记录。不会安装客户端或创建 API key。候选项目没有远端；本地范围写在项目指令中，但这不是操作系统级的网络隔离。运行前使用测试账号或客户端沙箱，不能向候选提供生产凭据。不要用绕过权限的参数。
 
 ```bash
 python3 skills/evaluate/scripts/run.py --list
 python3 skills/evaluate/scripts/run.py --client codex --case intermittent --source "$PWD" --out /tmp/jstack-results-codex --repeat 3
 python3 skills/evaluate/scripts/run.py --client claude --case all --source "$PWD" --out /tmp/jstack-results-claude
+python3 skills/evaluate/scripts/run.py --client agy --case intermittent --source "$PWD" --out /tmp/jstack-results-agy
 ```
 
 从已安装插件执行时，把脚本路径换成本 skill 的绝对路径；source 指向要评测的 jstack 源码。省略 source 可做不注入项目技能的对照，但用户级配置或已安装插件仍可能生效；记录这些污染，不能称为完全隔离的无技能基线。客户端不会被脚本切换模型。
@@ -23,4 +24,4 @@ python3 skills/evaluate/scripts/run.py --client claude --case all --source "$PWD
 
 复制匿名任务、产物、客观结果和工具记录给非作者审查者；不提供模型标签和候选自评。最终回复仅作为报告准确性的被检查对象。保留每次失败，不覆盖同名结果目录。清理工作区前确认结果目录里的证据足以复查；有未跟踪产物时一并保存。
 
-事件解析支持 Codex 旧版输出流里的 spawn_agent/agents_states 完成记录、Codex 新版 rollout（按 thread.started 的 id 在 `$CODEX_HOME/sessions` 下查找，复制为结果目录的 rollout.jsonl）里 spawn_agent 返回的 task_name、该子 agent 的 FINAL_ANSWER，以及子线程 rollout（`parent_thread_id` 指向父线程，复制为 rollout-child-*.jsonl）在 `subagent_history_start_ordinal` 之后至少一次有输出的非协作工具调用，以及 Claude 同步 Agent/Task 的匹配工具结果。未识别到的后台或其他独立渠道标为证据不足，不推断它们已成功；适配其他事件格式须用真实脱敏样本补回归后再放行。
+事件解析支持 Codex 旧版输出流里的 spawn_agent/agents_states 完成记录、Codex 新版 rollout（按 thread.started 的 id 在 `$CODEX_HOME/sessions` 下查找，复制为结果目录的 rollout.jsonl）里 spawn_agent 返回的 task_name、该子 agent 的 FINAL_ANSWER，以及子线程 rollout（`parent_thread_id` 指向父线程，复制为 rollout-child-*.jsonl）在 `subagent_history_start_ordinal` 之后至少一次有输出的非协作工具调用、Claude 同步 Agent/Task 的匹配工具结果，以及 `agy` 父子 transcript（按 `conversation_id` 在 `$AGY_HOME/brain` 下查找，复制为结果目录的 transcript.jsonl 与 transcript-child-*.jsonl）里 `invoke_subagent` 返回的子会话 ID、来自该 ID 的非空回复消息，以及子会话至少一次有非空输出的非协作工具调用。未识别到的后台或其他独立渠道标为证据不足，不推断它们已成功；适配其他事件格式须用真实脱敏样本补回归后再放行。

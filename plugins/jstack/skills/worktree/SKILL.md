@@ -11,14 +11,14 @@ disable-model-invocation: true
 ## 硬性规则
 
 - 用户主目录的分支和文件保持不变：不切换分支，不在主目录改文件或 commit。
-- 用 git 命令自建 worktree，不使用 Harness 自带的 worktree 功能：Codex 自带的只能放在用户级全局目录，Claude Code 自带的不能指定分支名和起点。
+- 用 git 命令自建 worktree，不使用 Harness 自带的 worktree 功能：Codex 自带的只能放在用户级全局目录，Claude Code 自带的不能指定分支名和起点，agy 的 subagent 工作区随子代理生命周期删除。
 - 删除失败时保留现场并汇报，不加 `--force` 或 `-D`。
 
 ## 占位符
 
 | 占位符 | 取值 |
 |---|---|
-| `<worktree 目录>` | Claude Code 为 `.claude/worktrees`，Codex 为 `.codex/worktrees` |
+| `<worktree 目录>` | Claude Code 为 `.claude/worktrees`，Codex 为 `.codex/worktrees`，agy 为 `.gemini/worktrees` |
 | `<主目录>` | 在用户当前目录运行 `git rev-parse --show-toplevel` 得到的绝对路径 |
 | `<基准>` | 调用方给的基准分支；没给时用 `git branch --show-current` 的结果，结果为空（detached HEAD）时用 `HEAD` |
 | `<新分支>` | 调用方给的分支名；没给时用 `jstack/<简短描述>`，简短描述用小写英文和连字符，例如 `jstack/fix-csv-last-row` |
@@ -30,7 +30,7 @@ disable-model-invocation: true
 
 0. 检查 `git status --short`、当前分支、worktree 和已有 PR，记录暂存、未暂存及未跟踪内容。涉及多人协作或远程进展时 fetch 并比较基准与远程差异，不自动 pull。任务依赖未提交内容时先确定如何保留并带入所需基线；不能只建一个缺少依赖的 worktree 然后继续。无法安全确定基线时说明阻塞，不覆盖、stash 或丢弃已有修改。
 
-1. 清理失效的 worktree 记录，把两个 worktree 目录写进本地排除文件（不改项目的 `.gitignore`），并列出遗留的 jstack worktree：
+1. 清理失效的 worktree 记录，把 worktree 目录写进本地排除文件（不改项目的 `.gitignore`），并列出遗留的 jstack worktree：
 
    ```bash
    sh <本 skill 目录>/scripts/prepare.sh

@@ -1,6 +1,6 @@
 # jstack
 
-个人工程工作流插件，Claude Code 和 Codex 共用一份源码。
+个人工程工作流插件，Claude Code、Codex 和 Antigravity CLI（agy）共用一份源码。
 
 ## 安装
 
@@ -18,9 +18,15 @@ codex plugin marketplace add jemin-us/jstack
 codex plugin add jstack@jstack
 ```
 
+Antigravity CLI（`agy` 自动转换 Claude Code 插件，不支持 `jstack@jemin-us/jstack` 写法；更新重新执行同一条命令）：
+
+```bash
+agy plugin install https://github.com/jemin-us/jstack
+```
+
 ## Skills
 
-只有 `mode` 和 `help` 会按请求自动加载，其余 skill 都要用 `/jstack:<名称>`（Codex 为 `$<名称>`）手动调用，或由 mode 读取。mode 是统一入口：开发请求按 playbook 推进，只要其中一步的请求读取对应 skill。`worktree`、`harness`、`finish` 只供其他 skill 读取。开发任务默认连续完成实现、验证、独立审查、commit、push、PR 和 CI 跟进，不逐步请求继续。需要 spec 和 ticket 时由 mode 自动发布。只分析的请求不改代码；用户明确限定本地修改或禁止提交时按限定范围交付。合并、发布和不可恢复的数据删除不包含在默认开发流程里。
+只有 `mode` 和 `help` 会按请求自动加载，其余 skill 都要用 `/jstack:<名称>`（Codex 为 `$<名称>`，agy 同为 `/jstack:<名称>`）手动调用，或由 mode 读取。mode 是统一入口：开发请求按 playbook 推进，只要其中一步的请求读取对应 skill。`worktree`、`harness`、`finish` 只供其他 skill 读取。开发任务默认连续完成实现、验证、独立审查、commit、push、PR 和 CI 跟进，不逐步请求继续。需要 spec 和 ticket 时由 mode 自动发布。只分析的请求不改代码；用户明确限定本地修改或禁止提交时按限定范围交付。合并、发布和不可恢复的数据删除不包含在默认开发流程里。
 
 适用范围：开发任务按影响范围选择路径。局部文案或样式改动可以直接走 implement，不必创建 spec 或 ticket，但仍验证实际效果、独立审查并自动交付。只读调查和服务操作不进入开发交付流程。
 
@@ -51,7 +57,7 @@ codex plugin add jstack@jstack
 | `trim` | 盘点每轮加载的上下文，确认后先搬家再压缩，验证没删过头、搬走的内容会被加载 |
 | `reflect` | 把会话里的纠正沉淀成规则，落到能管住它的最高一级，登记规则台账 |
 | `worktree` | 新建和清理项目内的 git worktree，把多个分支合并到集成 worktree，供其他 skill 读取 |
-| `harness` | 通用说法在 Claude Code 和 Codex 中的对应操作，供其他 skill 读取 |
+| `harness` | 通用说法在 Claude Code、Codex 和 agy 中的对应操作，供其他 skill 读取 |
 | `finish` | 独立验收、修复、PR/CI 和清理，供开发流程读取 |
 
 ## 开发
