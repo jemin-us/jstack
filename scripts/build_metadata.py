@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 NAME = "jstack"
 OWNER = "jemin-us"
 REPO = f"https://github.com/{OWNER}/{NAME}"
-DESCRIPTION = "个人工程工作流：需求追问、spec、ticket、实现、独立验收。Claude Code 与 Codex 共用。"
+DESCRIPTION = "个人工程工作流：需求追问、spec、ticket、实现、独立验收。Claude Code、Codex 与 Antigravity CLI 共用。"
 CODEX_ROOT = Path("plugins") / NAME
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 

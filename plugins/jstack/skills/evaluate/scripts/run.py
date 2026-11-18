@@ -19,6 +19,8 @@ from cases import CASES
 
 # Claude 默认要审批 Bash；开沙箱后自动放行，写入仍限于工作区，与 Codex workspace-write 对等。
 CLAUDE_SANDBOX = json.dumps({'sandbox': {'enabled': True, 'autoAllowBashIfSandboxed': True}})
+# agy 开启终端沙箱并放行沙箱内工具，会话级 --settings 不写回用户配置文件。
+AGY_SANDBOX = json.dumps({'enableTerminalSandbox': True, 'toolPermission': 'proceed-in-sandbox'})
 
 
 def digest(path):
@@ -29,11 +31,14 @@ def git(workspace, *args):
     return subprocess.check_output(['git', '-C', str(workspace), *args], text=True, stderr=subprocess.STDOUT)
 
 
-def command(client, workspace, response):
+def command(client, workspace, response, prompt=''):
     if client == 'codex':
         # 不加 --ephemeral：它不写 rollout，spawn_agent 会以 no rollout found 失败。
         return ['codex', 'exec', '--sandbox', 'workspace-write', '--json',
                 '-C', str(workspace), '-o', str(response), '-']
+    if client == 'agy':
+        # agy 的 -p 是带值字符串参数，用 --print= 避免以 - 开头的提示词被解析为参数。
+        return ['agy', '--output-format', 'stream-json', '--settings', AGY_SANDBOX, f'--print={prompt}']
     return ['claude', '-p', '--output-format', 'stream-json', '--verbose',
             '--permission-mode', 'acceptEdits', '--settings', CLAUDE_SANDBOX]
 
@@ -115,7 +120,7 @@ def independent_reviewers(events, client):
             for identity, state in item.get('agents_states', {}).items():
                 if identity in spawned and isinstance(state, dict) and state.get('status') == 'completed' and state.get('message'):
                     completed.add(identity)
-    else:
+    elif client == 'claude':
         calls = set()
         for event in events:
             message = event.get('message')
@@ -133,6 +138,67 @@ def independent_reviewers(events, client):
 
 
 COLLAB_TOOLS = {'spawn_agent', 'wait_agent', 'send_message', 'list_agents', 'interrupt_agent', 'close_agent'}
+AGY_COLLAB_TOOLS = {'invoke_subagent', 'manage_subagents', 'send_message', 'define_subagent', 'swarm'}
+AGY_REPLY_RE = re.compile(
+    r'\[Message\]\s+timestamp=\S+\s+sender=(\S+)\s+priority=\S+\s+content=(.*?)'
+    r'(?=\n\[Message\]\s+timestamp=|\n?</SYSTEM_MESSAGE>|$)', re.S)
+
+
+def valid_segment(value):
+    return isinstance(value, str) and value not in ('', '.', '..') and '/' not in value and '\\' not in value
+
+
+def extract_subagent_id(text):
+    marker = 'Created the following subagent:'
+    pos = text.find(marker)
+    if pos == -1:
+        return None
+    brace = text.find('{', pos + len(marker))
+    if brace == -1:
+        return None
+    try:
+        data, _ = json.JSONDecoder().raw_decode(text[brace:])
+    except json.JSONDecodeError:
+        return None
+    cid = data.get('conversationId') if isinstance(data, dict) else None
+    return cid if valid_segment(cid) else None
+
+
+def agy_child_ran_tools(records):
+    """子代理须有至少一次非协作工具调用成功返回非空输出。"""
+    pending = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        if record.get('type') == 'PLANNER_RESPONSE' and record.get('status') == 'DONE':
+            pending = [c.get('name') for c in (record.get('tool_calls') or []) if isinstance(c, dict)]
+        elif record.get('type') == 'GENERIC' and pending:
+            name = pending.pop(0)
+            if name and name not in AGY_COLLAB_TOOLS and record.get('status') == 'DONE' and str(record.get('content') or '').strip():
+                return True
+    return False
+
+
+def transcript_reviewers(records, children):
+    """agy 父会话须经 invoke_subagent 取得子会话 ID、收到该 ID 非空回复，且子会话实际运行过非协作工具。"""
+    pending, spawned, completed = [], set(), set()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        kind, status = record.get('type'), record.get('status')
+        if kind == 'PLANNER_RESPONSE' and status == 'DONE':
+            pending = [c.get('name') for c in (record.get('tool_calls') or []) if isinstance(c, dict)]
+        elif kind == 'GENERIC' and pending:
+            name = pending.pop(0)
+            if name == 'invoke_subagent' and status == 'DONE':
+                cid = extract_subagent_id(str(record.get('content') or ''))
+                if cid:
+                    spawned.add(cid)
+        elif kind == 'SYSTEM_MESSAGE' and status == 'DONE':
+            for sender, body in AGY_REPLY_RE.findall(str(record.get('content') or '')):
+                if sender in spawned and body.strip() and agy_child_ran_tools(children.get(sender, [])):
+                    completed.add(sender)
+    return completed
 
 
 def child_ran_tools(records):
@@ -207,17 +273,69 @@ def find_rollouts(events):
     return parent, children
 
 
+def find_transcripts(events):
+    """按 conversation_id 找 agy 父会话与被派发子会话的完整 transcript；找不到时不推断成功。"""
+    conv = next((e.get('conversation_id') or (e.get('result') or {}).get('conversation_id')
+                 for e in events if isinstance(e, dict) and e.get('event') in ('init', 'result')), None)
+    if not valid_segment(conv):
+        return None, {}
+    brain = Path(os.environ.get('AGY_HOME', Path.home()/'.gemini/antigravity-cli'))/'brain'
+
+    def log_file(cid):
+        logs = brain/cid/'.system_generated/logs'
+        for name in ('transcript_full.jsonl', 'transcript.jsonl'):
+            candidate = logs/name
+            if candidate.is_file():
+                return candidate
+        return None
+
+    parent = log_file(conv)
+    if not parent:
+        return None, {}
+    child_ids = set()
+    for event in events:
+        info = (event.get('step_update') or {}).get('subagent_info') if isinstance(event, dict) else None
+        for sub in (info.get('subagents') or []) if isinstance(info, dict) else []:
+            cid = sub.get('conversation_id') if isinstance(sub, dict) else None
+            if valid_segment(cid) and cid != conv:
+                child_ids.add(cid)
+    for record in read_jsonl(parent):
+        cid = extract_subagent_id(str(record.get('content') or '')) if isinstance(record, dict) else None
+        if cid and cid != conv:
+            child_ids.add(cid)
+    children = {cid: path for cid in sorted(child_ids) if (path := log_file(cid)) is not None}
+    return parent, children
+
+
 def event_summary(path, client, rollout=None, children=None):
     """只接受客户端完整事件流；统计只用于证据索引，不判定任务成功。"""
     events=[json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     if not events or any(not isinstance(event,dict) for event in events):
         raise ValueError('缺少结构化事件')
+    records = read_jsonl(rollout) if rollout is not None else None
     if client=='codex':
         terminal=[e for e in events if e.get('type') in ('turn.completed','turn.failed')]
         if not terminal or terminal[-1]['type']!='turn.completed':
             raise ValueError('没有成功结束的客户端轮次')
         tools=sum(e.get('type')=='item.completed' and e.get('item',{}).get('type') in ('command_execution','mcp_tool_call','file_change') for e in events)
         usage=terminal[-1].get('usage')
+    elif client=='agy':
+        terminal=[e['result'] for e in events if e.get('event')=='result' and isinstance(e.get('result'),dict)]
+        if not terminal:
+            raise ValueError('agy 未成功结束')
+        last=terminal[-1]
+        completed_turn = bool(records and isinstance(records[-1], dict) and records[-1].get('type')=='PLANNER_RESPONSE'
+                              and records[-1].get('status')=='DONE' and str(records[-1].get('content') or '').strip())
+        if last.get('finished_reason') in ('print_timeout','interrupted') or not str(last.get('response') or '').strip():
+            raise ValueError('agy 未成功结束')
+        if last.get('status')!='SUCCESS' and not completed_turn:
+            raise ValueError('agy 未成功结束')
+        if records is not None:
+            tools=sum(len(r.get('tool_calls') or []) for r in records if isinstance(r,dict) and r.get('type')=='PLANNER_RESPONSE')
+        else:
+            tools=sum(1 for e in events if e.get('event')=='step_update' and isinstance(e.get('step_update'),dict)
+                      and e['step_update'].get('state')=='DONE' and e['step_update'].get('tool_name'))
+        usage=last.get('usage')
     else:
         terminal=[e for e in events if e.get('type')=='result']
         if not terminal or terminal[-1].get('is_error') or terminal[-1].get('subtype')!='success':
@@ -230,8 +348,9 @@ def event_summary(path, client, rollout=None, children=None):
                 tools+=sum(isinstance(block,dict) and block.get('type')=='tool_use' for block in blocks)
         usage=terminal[-1].get('usage')
     reviewers = set(independent_reviewers(events,client))
-    if rollout is not None:
-        reviewers |= rollout_reviewers(read_jsonl(rollout), {name: read_jsonl(child) for name, child in (children or {}).items()})
+    if records is not None:
+        child_records = {name: read_jsonl(child) for name, child in (children or {}).items()}
+        reviewers |= transcript_reviewers(records, child_records) if client == 'agy' else rollout_reviewers(records, child_records)
     return {'events':len(events),'tool_events':tools,'usage':usage, 'independent_reviewers':sorted(reviewers)}
 
 
@@ -387,9 +506,9 @@ def run_case(case_name, client, source, destination, timeout):
         # response 由外层生成，避免被当作候选擅自修改只读仓库。
         with (workspace/'.git/info/exclude').open('a') as exclude:
             exclude.write('.response.txt\n')
-        argv = command(client, workspace, response)
+        argv = command(client, workspace, response, prompt)
         result['invocation'] = argv
-        process = execute(argv,workspace,events,destination/'stderr.txt',timeout,prompt)
+        process = execute(argv,workspace,events,destination/'stderr.txt',timeout,None if client == 'agy' else prompt)
         result['process'] = process
         if response.exists():
             shutil.copyfile(response,destination/'response.txt')
@@ -402,6 +521,14 @@ def run_case(case_name, client, source, destination, timeout):
                     continue
                 if event.get('type')=='result':
                     (destination/'response.txt').write_text(str(event.get('result','')))
+        elif client == 'agy':
+            for line in events.read_text().splitlines():
+                try:
+                    event=json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if event.get('event')=='result' and isinstance(event.get('result'),dict):
+                    (destination/'response.txt').write_text(str(event['result'].get('response','')))
         if process['timed_out'] or process['exit_code'] != 0:
             result['reason'] = '客户端超时' if process['timed_out'] else '客户端执行失败，检查事件与错误日志'
             return result
@@ -416,6 +543,14 @@ def run_case(case_name, client, source, destination, timeout):
                 shutil.copyfile(found, rollout)
             for index, (name, path) in enumerate(sorted(found_children.items())):
                 children[name] = destination/f'rollout-child-{index+1}.jsonl'
+                shutil.copyfile(path, children[name])
+        elif client == 'agy':
+            found, found_children = find_transcripts(read_jsonl(events))
+            if found:
+                rollout = destination/'transcript.jsonl'
+                shutil.copyfile(found, rollout)
+            for index, (name, path) in enumerate(sorted(found_children.items())):
+                children[name] = destination/f'transcript-child-{index+1}.jsonl'
                 shutil.copyfile(path, children[name])
         result['events'] = event_summary(events,client,rollout,children)
         failures = objective(case,workspace,before)
@@ -458,7 +593,7 @@ def run_case(case_name, client, source, destination, timeout):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--list',action='store_true')
-    parser.add_argument('--client',choices=['codex','claude'])
+    parser.add_argument('--client',choices=['codex','claude','agy'])
     parser.add_argument('--case',choices=['all',*CASES],default='all')
     parser.add_argument('--source',type=Path,help='jstack 源码根目录；省略则不注入项目技能，但客户端全局配置仍可能生效')
     parser.add_argument('--out',type=Path)

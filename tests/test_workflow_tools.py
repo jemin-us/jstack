@@ -359,6 +359,12 @@ class RunnerTests(unittest.TestCase):
         settings=json.loads(claude[claude.index('--settings')+1])
         self.assertTrue(settings['sandbox']['enabled'] and settings['sandbox']['autoAllowBashIfSandboxed'])
         self.assertNotIn('bypassPermissions',claude)
+        agy=runner.command('agy',self.root,self.root/'r.txt','- leading dash prompt')
+        agy_settings=json.loads(agy[agy.index('--settings')+1])
+        self.assertTrue(agy_settings['enableTerminalSandbox'])
+        self.assertEqual(agy_settings['toolPermission'],'proceed-in-sandbox')
+        self.assertIn('--print=- leading dash prompt',agy)
+        self.assertNotIn('--dangerously-skip-permissions',agy)
 
     def test_claude_independent_completion_rejects_errors_background_and_unmatched(self):
         call={'message':{'content':[{'type':'tool_use','name':'Agent','id':'a','input':{}}]}}
@@ -375,6 +381,77 @@ class RunnerTests(unittest.TestCase):
         events=[{'message':{'content':[{'type':'tool_use','name':'Agent','input':{}}]}},
                 {'message':{'content':[{'type':'tool_result','content':'claimed result'}]}}]
         self.assertEqual(runner.independent_reviewers(events,'claude'),[])
+
+    @staticmethod
+    def agy_child(own_tools, status='DONE'):
+        # 结构取自 agy 1.5.10 的真实子代理 transcript_full.jsonl，已删去提示词与机器路径。
+        steps=[{'step_index':0,'source':'SYSTEM','type':'SYSTEM_MESSAGE','status':'DONE','content':'brief'}]
+        idx=1
+        for name in own_tools:
+            steps.append({'step_index':idx,'source':'MODEL','type':'PLANNER_RESPONSE','status':'DONE',
+                          'tool_calls':[{'name':name,'args':{}}]})
+            steps.append({'step_index':idx+1,'source':'MODEL','type':'GENERIC','status':status,'content':'tool output' if status=='DONE' else ''})
+            idx+=2
+        steps.append({'step_index':idx,'source':'MODEL','type':'PLANNER_RESPONSE','status':'DONE','content':'done'})
+        return steps
+
+    def test_agy_transcript_completion_requires_spawn_reply_and_child_tool_run(self):
+        spawn={'step_index':1,'source':'MODEL','type':'PLANNER_RESPONSE','status':'DONE',
+               'tool_calls':[{'name':'invoke_subagent','args':{'TypeName':'"self"'}}]}
+        created={'step_index':2,'source':'MODEL','type':'GENERIC','status':'DONE',
+                 'content':'Created At: t\nCompleted At: t\nCreated the following subagent:\n{\n  "conversationId": "c1"\n}\n'}
+        def reply(sender, body):
+            return {'step_index':5,'source':'SYSTEM','type':'SYSTEM_MESSAGE','status':'DONE',
+                    'content':f'<SYSTEM_MESSAGE>\n[Message] timestamp=2026-11-18T00:00:00Z sender={sender} priority=MESSAGE_PRIORITY_HIGH content={body}\n</SYSTEM_MESSAGE>'}
+        ran={'c1':self.agy_child(['run_command','send_message'])}
+        self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],ran),{'c1'})
+        self.assertEqual(runner.transcript_reviewers([created,reply('c1','FAIL')],ran),set())
+        self.assertEqual(runner.transcript_reviewers([spawn,reply('c1','FAIL')],ran),set())
+        self.assertEqual(runner.transcript_reviewers([spawn,created,reply('other','FAIL')],ran),set())
+        self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','   ')],ran),set())
+        self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],{}),set())
+        self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],{'c1':self.agy_child(['send_message'])}),set())
+        self.assertEqual(runner.transcript_reviewers([spawn,created,reply('c1','FAIL')],{'c1':self.agy_child(['run_command'],status='ERROR')}),set())
+
+    def test_agy_transcripts_are_found_and_merged_into_summary(self):
+        home=self.root/'agy-home'
+        def write_log(cid, steps):
+            p=home/'brain'/cid/'.system_generated/logs/transcript_full.jsonl'
+            p.parent.mkdir(parents=True,exist_ok=True)
+            p.write_text('\n'.join(json.dumps(x) for x in steps)+'\n')
+            return p
+        parent=write_log('p1',[
+            {'step_index':0,'source':'USER_EXPLICIT','type':'USER_INPUT','status':'DONE','content':'task'},
+            {'step_index':1,'source':'MODEL','type':'PLANNER_RESPONSE','status':'DONE','tool_calls':[{'name':'run_command'},{'name':'invoke_subagent'}]},
+            {'step_index':2,'source':'MODEL','type':'GENERIC','status':'DONE','content':'ok'},
+            {'step_index':3,'source':'MODEL','type':'GENERIC','status':'DONE','content':'Created the following subagent:\n{"conversationId":"c1"}\n'},
+            {'step_index':4,'source':'SYSTEM','type':'SYSTEM_MESSAGE','status':'DONE','content':'<SYSTEM_MESSAGE>\n[Message] timestamp=t sender=c1 priority=HIGH content=PASS\n</SYSTEM_MESSAGE>'},
+            {'step_index':5,'source':'MODEL','type':'PLANNER_RESPONSE','status':'DONE','content':'final report'}])
+        child=write_log('c1',self.agy_child(['read_file','run_command']))
+        write_log('unrelated',self.agy_child(['run_command']))
+        events_list=[
+            {'event':'init','conversation_id':'p1','init':{'cwd':str(self.root)}},
+            {'event':'step_update','step_update':{'conversation_id':'p1','state':'DONE','step_type':'subagent','tool_name':'invoke_subagent',
+                                                  'subagent_info':{'subagents':[{'conversation_id':'c1'},{'conversation_id':'../escape'}]}}},
+            {'event':'result','result':{'conversation_id':'p1','status':'SUCCESS','response':'final report','usage':{'total_tokens':10}}}]
+        events=self.root/'events.jsonl'
+        events.write_text('\n'.join(json.dumps(x) for x in events_list)+'\n')
+        with patch.dict('os.environ',{'AGY_HOME':str(home)}):
+            found,children=runner.find_transcripts(events_list)
+            self.assertEqual((found,children),(parent,{'c1':child}))
+        summary=runner.event_summary(events,'agy',parent,children)
+        self.assertEqual(summary['tool_events'],2)
+        self.assertEqual(summary['independent_reviewers'],['c1'])
+        # 瞬时重试留下 ERROR 标记时，仅在非超时中断且父 transcript 已正常完成最终回复时接纳；无 transcript 时拒绝。
+        events_list[-1]={'event':'result','result':{'conversation_id':'p1','status':'ERROR','finished_reason':'error','response':'final report','usage':{}}}
+        events.write_text('\n'.join(json.dumps(x) for x in events_list)+'\n')
+        self.assertEqual(runner.event_summary(events,'agy',parent,children)['independent_reviewers'],['c1'])
+        with self.assertRaises(ValueError):
+            runner.event_summary(events,'agy')
+        events_list[-1]['result']['finished_reason']='print_timeout'
+        events.write_text('\n'.join(json.dumps(x) for x in events_list)+'\n')
+        with self.assertRaises(ValueError):
+            runner.event_summary(events,'agy',parent,children)
 
     def test_artifacts_survive_symlinked_temporary_root(self):
         actual=self.root/'actual'; actual.mkdir()
